@@ -139,9 +139,9 @@ def _allocate(snapshot: Snapshot, state: RuntimeState, sources: tuple[str, ...])
             sources,
             load.id,
             demand,
-            used_component,
-            used_connection,
-            used_source,
+            used_component=used_component,
+            used_connection=used_connection,
+            used_source=used_source,
         )
         flow_value, edge_flow = _edmonds_karp(capacities, "@source", "@sink")
         load_service[load.id] = flow_value
@@ -167,6 +167,7 @@ def _build_network(
     sources: tuple[str, ...],
     load_id: str,
     demand_w: int,
+    *,
     used_component: dict[str, int],
     used_connection: dict[str, int],
     used_source: dict[str, int],
