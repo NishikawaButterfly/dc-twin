@@ -8,6 +8,10 @@ I work around data-center electrical systems, and I wanted a way to reason about
 
 To be clear about scope: this is not AC power flow, a short-circuit or protection-coordination study, a safety analysis, a Tier assessment, or a live operational twin. It simulates lossless active power against capacity constraints, and nothing else.
 
+[**Open the live explorer**](https://dc-twin.fly.dev/) - a small public
+instance with the three synthetic reference scenarios. Runs live in memory
+and disappear when the machine stops itself.
+
 ![Web explorer after running the composite reference scenario](assets/screenshots/web-explorer.png)
 
 ## What it does
