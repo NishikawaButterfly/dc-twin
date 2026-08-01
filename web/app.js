@@ -15,6 +15,7 @@ const state = {
   normalizedResult: null,
   resultScenarioId: "",
   timelineIndex: 0,
+  comparison: null,
   busy: false,
 };
 
@@ -24,6 +25,19 @@ const elements = {
   refreshButton: document.querySelector("#refresh-button"),
   runButton: document.querySelector("#run-button"),
   replayButton: document.querySelector("#replay-button"),
+  compareSelectA: document.querySelector("#compare-select-a"),
+  compareSelectB: document.querySelector("#compare-select-b"),
+  compareButton: document.querySelector("#compare-button"),
+  comparison: document.querySelector("#comparison"),
+  comparisonTitle: document.querySelector("#comparison-title"),
+  comparisonSummary: document.querySelector("#comparison-summary"),
+  comparisonMetricsHeadA: document.querySelector("#comparison-metrics-head-a"),
+  comparisonMetricsHeadB: document.querySelector("#comparison-metrics-head-b"),
+  comparisonMetricsBody: document.querySelector("#comparison-metrics-body"),
+  comparisonMilestonesHeadA: document.querySelector("#comparison-milestones-head-a"),
+  comparisonMilestonesHeadB: document.querySelector("#comparison-milestones-head-b"),
+  comparisonMilestonesBody: document.querySelector("#comparison-milestones-body"),
+  comparisonMilestonesEmpty: document.querySelector("#comparison-milestones-empty"),
   statusPanel: document.querySelector("#status-panel"),
   statusSymbol: document.querySelector("#status-symbol"),
   statusTitle: document.querySelector("#status-title"),
@@ -176,6 +190,13 @@ function powerKwFrom(records, kwKeys, wattKeys) {
   return watts === null ? null : watts / 1_000;
 }
 
+function formatDuration(seconds) {
+  if (seconds === null || seconds === undefined || !Number.isFinite(seconds)) {
+    return "—";
+  }
+  return formatTime(seconds).replace("T+", "");
+}
+
 function formatTime(value) {
   const numeric = asNumber(value);
   if (numeric !== null && numeric >= 0) {
@@ -237,8 +258,13 @@ function setBusy(busy) {
   elements.replayButton.disabled =
     busy || !state.result || state.resultScenarioId !== elements.scenarioSelect.value;
   elements.refreshButton.disabled = busy;
+  elements.compareSelectA.disabled = busy || !hasScenarios;
+  elements.compareSelectB.disabled = busy || !hasScenarios;
+  elements.compareButton.disabled =
+    busy || !elements.compareSelectA.value || !elements.compareSelectB.value;
   elements.runButton.setAttribute("aria-busy", String(busy));
   elements.replayButton.setAttribute("aria-busy", String(busy));
+  elements.compareButton.setAttribute("aria-busy", String(busy));
 }
 
 function summarizeApiDetail(value) {
@@ -339,33 +365,46 @@ function scenarioListFrom(payload) {
   return arrayFrom([payload], ["scenarios", "items", "data", "reference_scenarios"]);
 }
 
-function renderScenarioOptions(selectedId = "") {
-  elements.scenarioSelect.replaceChildren();
+function fillScenarioSelect(select, selectedId, placeholder = "") {
+  select.replaceChildren();
   if (state.scenarios.length === 0) {
     const option = document.createElement("option");
     option.value = "";
     option.textContent = "No reference scenarios available";
-    elements.scenarioSelect.append(option);
-    updateScenarioDescription();
+    select.append(option);
     return;
   }
 
+  if (placeholder) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = placeholder;
+    select.append(option);
+  }
   for (const scenario of state.scenarios) {
     const option = document.createElement("option");
     option.value = scenario.scenarioId;
     option.textContent = `${scenario.name} · ${scenario.redundancy}`;
-    elements.scenarioSelect.append(option);
+    select.append(option);
   }
   if (state.scenarios.some((scenario) => scenario.scenarioId === selectedId)) {
-    elements.scenarioSelect.value = selectedId;
+    select.value = selectedId;
   }
+}
+
+function renderScenarioOptions(selectedId = "") {
+  fillScenarioSelect(elements.scenarioSelect, selectedId);
+  fillScenarioSelect(elements.compareSelectA, elements.compareSelectA.value, "Select scenario A");
+  fillScenarioSelect(elements.compareSelectB, elements.compareSelectB.value, "Select scenario B");
   updateScenarioDescription();
 }
 
+function scenarioById(scenarioId) {
+  return state.scenarios.find((scenario) => scenario.scenarioId === scenarioId);
+}
+
 function selectedScenario() {
-  return state.scenarios.find(
-    (scenario) => scenario.scenarioId === elements.scenarioSelect.value,
-  );
+  return scenarioById(elements.scenarioSelect.value);
 }
 
 function updateScenarioDescription() {
@@ -438,8 +477,8 @@ function metricValue(metrics, result, keys) {
   return asNumber(valueFrom([metrics, result], keys));
 }
 
-function normalizeResult(raw) {
-  const selected = selectedScenario();
+function normalizeResult(raw, catalogScenario = selectedScenario()) {
+  const selected = catalogScenario;
   const scenario = isRecord(raw.scenario) ? raw.scenario : selected?.raw || {};
   const metrics = isRecord(raw.metrics)
     ? raw.metrics
@@ -480,6 +519,14 @@ function normalizeResult(raw) {
   if (serviceRatio === null && demandedEnergy !== null && demandedEnergy > 0 && servedEnergy !== null) {
     serviceRatio = servedEnergy / demandedEnergy;
   }
+  const interruptionMs = metricValue(metrics, raw, [
+    "interruption_duration_ms",
+    "interruption_ms",
+  ]);
+  const interruptionSeconds =
+    interruptionMs !== null
+      ? interruptionMs / 1_000
+      : metricValue(metrics, raw, ["interruption_duration_seconds", "interruption_seconds"]);
 
   const timeline = arrayFrom([raw, simulation], [
     "timeline",
@@ -511,6 +558,7 @@ function normalizeResult(raw) {
     servedEnergy,
     unservedEnergy,
     serviceRatio,
+    interruptionSeconds,
     redundancy: formatEnumLabel(
       valueFrom([scenario, raw, metrics], [
         "modeled_redundancy",
@@ -633,6 +681,7 @@ function renderResult(raw) {
     result.telemetry.length === 0 ? "This result contains no telemetry records." : "";
 
   elements.emptyState.hidden = true;
+  elements.comparison.hidden = true;
   elements.results.hidden = false;
   renderSelectedTimepoint();
 }
@@ -1227,6 +1276,14 @@ function appendCell(row, value) {
   return cell;
 }
 
+function appendRowHeader(row, value) {
+  const cell = document.createElement("th");
+  cell.setAttribute("scope", "row");
+  cell.textContent = value;
+  row.append(cell);
+  return cell;
+}
+
 function renderEvidence(result, selectedTimelineEntry) {
   const records = normalizeEvidence(result);
   const selectedTime = asNumber(timeFromRecord(selectedTimelineEntry));
@@ -1342,6 +1399,203 @@ function downloadTelemetry() {
   downloadBlob(telemetryCsv(result.telemetry), "text/csv;charset=utf-8", `${id}-telemetry.csv`);
 }
 
+function milestoneLabel(value) {
+  const text = asText(value).toLowerCase();
+  if (text.includes("low_energy") || text.includes("low-energy")) {
+    return "UPS low-energy threshold";
+  }
+  if (text.includes("deplet")) {
+    return "UPS depletion";
+  }
+  if (text.includes("restor")) {
+    return "Restoration";
+  }
+  return null;
+}
+
+function runMilestones(result) {
+  const milestones = new Map();
+  const sources = [
+    { records: result.alarms, kindKeys: ["code", "kind", "type"] },
+    {
+      records: result.transitions,
+      kindKeys: ["event_kind", "event_type", "transition_type", "type"],
+    },
+  ];
+  for (const source of sources) {
+    for (const record of source.records) {
+      const label = milestoneLabel(valueFrom([record], source.kindKeys));
+      if (!label) {
+        continue;
+      }
+      const component = asText(
+        valueFrom([record], ["component_id", "component", "target_id", "asset_id"]),
+        "System",
+      );
+      const key = `${label} · ${component}`;
+      const time = asNumber(timeFromRecord(record));
+      const existing = milestones.get(key);
+      if (existing === undefined || (time !== null && (existing === null || time < existing))) {
+        milestones.set(key, time);
+      }
+    }
+  }
+  return milestones;
+}
+
+function mergedMilestones(resultA, resultB) {
+  const milestonesA = runMilestones(resultA);
+  const milestonesB = runMilestones(resultB);
+  const keys = [...new Set([...milestonesA.keys(), ...milestonesB.keys()])];
+  return keys
+    .map((key) => {
+      const timeA = milestonesA.has(key) ? milestonesA.get(key) : undefined;
+      const timeB = milestonesB.has(key) ? milestonesB.get(key) : undefined;
+      const matches =
+        timeA !== undefined &&
+        timeB !== undefined &&
+        timeA !== null &&
+        timeB !== null &&
+        Math.abs(timeA - timeB) < 0.000001;
+      return { key, timeA, timeB, diverges: !matches };
+    })
+    .sort((left, right) => {
+      const leftTime = Math.min(
+        left.timeA ?? Number.POSITIVE_INFINITY,
+        left.timeB ?? Number.POSITIVE_INFINITY,
+      );
+      const rightTime = Math.min(
+        right.timeA ?? Number.POSITIVE_INFINITY,
+        right.timeB ?? Number.POSITIVE_INFINITY,
+      );
+      if (leftTime !== rightTime) {
+        return leftTime - rightTime;
+      }
+      return left.key.localeCompare(right.key);
+    });
+}
+
+function milestoneTimeText(time) {
+  return time === undefined ? "Not reached" : formatTime(time);
+}
+
+function renderComparison() {
+  const comparison = state.comparison;
+  if (!comparison) {
+    return;
+  }
+  const resultA = comparison.a.result;
+  const resultB = comparison.b.result;
+  const labelA = `A · ${comparison.a.scenario.name}`;
+  const labelB = `B · ${comparison.b.scenario.name}`;
+  elements.comparisonMetricsHeadA.textContent = labelA;
+  elements.comparisonMetricsHeadB.textContent = labelB;
+  elements.comparisonMilestonesHeadA.textContent = labelA;
+  elements.comparisonMilestonesHeadB.textContent = labelB;
+  elements.comparisonSummary.textContent = `${comparison.a.scenario.name} versus ${comparison.b.scenario.name} · Two sequential deterministic runs`;
+
+  const metricRows = [
+    ["Demanded energy", formatEnergy(resultA.demandedEnergy), formatEnergy(resultB.demandedEnergy)],
+    ["Served energy", formatEnergy(resultA.servedEnergy), formatEnergy(resultB.servedEnergy)],
+    ["Unserved energy", formatEnergy(resultA.unservedEnergy), formatEnergy(resultB.unservedEnergy)],
+    [
+      "Scenario service ratio",
+      formatPercent(resultA.serviceRatio),
+      formatPercent(resultB.serviceRatio),
+    ],
+    ["Modeled redundancy state", resultA.redundancy, resultB.redundancy],
+    [
+      "Interruption duration",
+      formatDuration(resultA.interruptionSeconds),
+      formatDuration(resultB.interruptionSeconds),
+    ],
+    ["Alarms", formatDecimal(resultA.alarms.length, 0), formatDecimal(resultB.alarms.length, 0)],
+  ];
+  elements.comparisonMetricsBody.replaceChildren();
+  for (const [label, valueA, valueB] of metricRows) {
+    const row = document.createElement("tr");
+    appendRowHeader(row, label);
+    appendCell(row, valueA);
+    appendCell(row, valueB);
+    elements.comparisonMetricsBody.append(row);
+  }
+
+  const milestones = mergedMilestones(resultA, resultB);
+  elements.comparisonMilestonesBody.replaceChildren();
+  elements.comparisonMilestonesEmpty.hidden = milestones.length !== 0;
+  for (const milestone of milestones) {
+    const row = document.createElement("tr");
+    if (milestone.diverges) {
+      row.classList.add("is-divergent");
+    }
+    appendRowHeader(row, milestone.key);
+    appendCell(row, milestoneTimeText(milestone.timeA));
+    appendCell(row, milestoneTimeText(milestone.timeB));
+    const alignmentCell = appendCell(row, "");
+    const badge = document.createElement("span");
+    badge.className = `record-badge record-${milestone.diverges ? "warning" : "ok"}`;
+    badge.textContent = milestone.diverges ? "Diverges" : "Matches";
+    alignmentCell.append(badge);
+    elements.comparisonMilestonesBody.append(row);
+  }
+
+  elements.emptyState.hidden = true;
+  elements.results.hidden = true;
+  elements.comparison.hidden = false;
+  elements.comparisonTitle.focus();
+}
+
+async function runComparisonScenario(scenario, position) {
+  setStatus(
+    "loading",
+    "Running scenario comparison",
+    `${scenario.name} is being evaluated by the simulation API (run ${position} of 2).`,
+  );
+  const payload = await requestJson(API.run(scenario.scenarioId), { method: "POST" });
+  const raw = unwrapResult(payload);
+  if (!raw) {
+    throw new Error("The run response did not contain a simulation result object.");
+  }
+  return normalizeResult(raw, scenario);
+}
+
+async function runComparison() {
+  const scenarioA = scenarioById(elements.compareSelectA.value);
+  const scenarioB = scenarioById(elements.compareSelectB.value);
+  if (!scenarioA || !scenarioB || state.busy) {
+    return;
+  }
+
+  setBusy(true);
+  try {
+    const resultA = await runComparisonScenario(scenarioA, 1);
+    const resultB = await runComparisonScenario(scenarioB, 2);
+    state.comparison = {
+      a: { scenario: scenarioA, result: resultA },
+      b: { scenario: scenarioB, result: resultB },
+    };
+    renderComparison();
+    setStatus(
+      "success",
+      "Scenario comparison complete",
+      `${scenarioA.name} and ${scenarioB.name} were evaluated sequentially by the simulation API.`,
+    );
+  } catch (error) {
+    setStatus(
+      "error",
+      "Scenario comparison failed",
+      error instanceof Error ? error.message : "The simulation request failed.",
+    );
+  } finally {
+    setBusy(false);
+  }
+}
+
+function updateCompareButton() {
+  elements.compareButton.disabled =
+    state.busy || !elements.compareSelectA.value || !elements.compareSelectB.value;
+}
+
 elements.scenarioSelect.addEventListener("change", () => {
   updateScenarioDescription();
   elements.runButton.disabled = state.busy || !elements.scenarioSelect.value;
@@ -1352,6 +1606,9 @@ elements.scenarioSelect.addEventListener("change", () => {
 elements.refreshButton.addEventListener("click", loadScenarios);
 elements.runButton.addEventListener("click", () => runScenario());
 elements.replayButton.addEventListener("click", () => runScenario({ replay: true }));
+elements.compareSelectA.addEventListener("change", updateCompareButton);
+elements.compareSelectB.addEventListener("change", updateCompareButton);
+elements.compareButton.addEventListener("click", runComparison);
 elements.timelineSlider.addEventListener("input", () => {
   const index = Number.parseInt(elements.timelineSlider.value, 10);
   state.timelineIndex = Number.isFinite(index) ? index : 0;

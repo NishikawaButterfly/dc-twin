@@ -97,6 +97,36 @@
           </div>
         </div>
 
+        <div class="compare-grid" role="group" aria-labelledby="compare-title">
+          <h3 id="compare-title" class="compare-title">Compare two scenarios</h3>
+          <div class="field">
+            <label for="compare-select-a">Scenario A</label>
+            <select id="compare-select-a" disabled>
+              <option value="">Loading reference scenarios…</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="compare-select-b">Scenario B</label>
+            <select id="compare-select-b" disabled>
+              <option value="">Loading reference scenarios…</option>
+            </select>
+          </div>
+          <div class="run-actions">
+            <button
+              id="compare-button"
+              class="button button-secondary"
+              type="button"
+              aria-describedby="compare-help"
+              disabled
+            >
+              <span aria-hidden="true">⇄</span> Compare runs
+            </button>
+            <p id="compare-help" class="field-help">
+              Both scenarios run sequentially and their outcomes appear side by side.
+            </p>
+          </div>
+        </div>
+
         <div id="status-panel" class="status-panel status-loading" role="status" aria-live="polite">
           <span id="status-symbol" class="status-symbol" aria-hidden="true">…</span>
           <div>
@@ -326,6 +356,73 @@
           <p class="panel-note">
             Hashes identify modeled inputs and deterministic computation output. A matching hash
             supports reproducibility; it does not validate real-world equipment or operation.
+          </p>
+        </section>
+      </div>
+
+      <div id="comparison" class="results" hidden>
+        <section class="results-heading" aria-labelledby="comparison-title">
+          <div>
+            <p class="section-kicker">Scenario comparison</p>
+            <h2 id="comparison-title" tabindex="-1">Side-by-side outcome</h2>
+            <p id="comparison-summary" class="result-summary"></p>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="comparison-metrics-title">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Per-run metrics</p>
+              <h2 id="comparison-metrics-title">Energy and service metrics</h2>
+            </div>
+          </div>
+          <div class="table-scroll" tabindex="0" aria-label="Scrollable comparison metrics table">
+            <table class="comparison-table">
+              <caption class="sr-only">
+                Scenario-level metrics for the two compared runs, one column per run.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Metric</th>
+                  <th scope="col" id="comparison-metrics-head-a">Scenario A</th>
+                  <th scope="col" id="comparison-metrics-head-b">Scenario B</th>
+                </tr>
+              </thead>
+              <tbody id="comparison-metrics-body"></tbody>
+            </table>
+          </div>
+          <p class="panel-note">
+            Each column reports one deterministic run only. The values are scenario evidence, not
+            availability or compliance claims.
+          </p>
+        </section>
+
+        <section class="panel" aria-labelledby="comparison-milestones-title">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Where the runs diverge</p>
+              <h2 id="comparison-milestones-title">Timeline milestones</h2>
+            </div>
+          </div>
+          <div class="table-scroll" tabindex="0" aria-label="Scrollable comparison milestones table">
+            <table class="comparison-table">
+              <caption class="sr-only">
+                Merged UPS threshold, depletion, and restoration milestones with the modeled time
+                in each run and whether the runs align.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Milestone</th>
+                  <th scope="col" id="comparison-milestones-head-a">Scenario A</th>
+                  <th scope="col" id="comparison-milestones-head-b">Scenario B</th>
+                  <th scope="col">Alignment</th>
+                </tr>
+              </thead>
+              <tbody id="comparison-milestones-body"></tbody>
+            </table>
+          </div>
+          <p id="comparison-milestones-empty" class="inline-empty" hidden>
+            Neither run reported UPS low-energy, depletion, or restoration milestones.
           </p>
         </section>
       </div>
