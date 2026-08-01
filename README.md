@@ -1,8 +1,8 @@
-# Data Center Electrical Digital Twin
+# dc-twin
 
 [![CI](https://github.com/NishikawaButterfly/dc-twin/actions/workflows/ci.yml/badge.svg)](https://github.com/NishikawaButterfly/dc-twin/actions/workflows/ci.yml)
 
-A deterministic, capacity-constrained simulator for data-center electrical architectures. You give it a versioned design snapshot and a scenario of failures, maintenance windows, and transfers. It returns a timeline of which loads stayed served, which paths carried the power, when each UPS ran down, and what caused every alarm.
+dc-twin is a deterministic, capacity-constrained simulator for synthetic data-center electrical architectures. The name is a repo slug, not a claim: nothing here connects to a live facility. You give it a versioned design snapshot and a scenario of failures, maintenance windows, and transfers. It returns a timeline of which loads stayed served, which paths carried the power, when each UPS ran down, and what caused every alarm.
 
 I work around data-center electrical systems, and I wanted a way to reason about redundancy and failure timelines without bringing any real site information into public code. Everything in this repository is synthetic and hand-authored. The goal is to make event ordering and capacity consequences reviewable, not to model any real facility.
 
