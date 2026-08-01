@@ -89,6 +89,8 @@ All public data is synthetic. The repository contains no customer topology, site
 
 ## Documentation
 
+If none of this vocabulary is familiar, start with the [plain-language explainer](docs/EXPLAINER.md).
+
 - [Architecture](docs/ARCHITECTURE.md) and the [architecture decision records](adr/)
 - [Model specification](docs/MODEL_SPECIFICATION.md)
 - [Reference scenario](docs/REFERENCE_SCENARIO.md)
