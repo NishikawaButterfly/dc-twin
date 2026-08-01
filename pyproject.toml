@@ -25,7 +25,7 @@ dependencies = [
   "psycopg[binary]==3.3.4",
   "pydantic==2.13.4",
   "sqlalchemy==2.0.51",
-  "uvicorn==0.51.0",
+  "uvicorn==0.52.0",
 ]
 
 [project.optional-dependencies]
@@ -33,13 +33,13 @@ test = [
   "httpx==0.28.1",
   "mypy==2.3.0",
   "pytest==9.1.1",
-  "pytest-cov==7.0.0",
+  "pytest-cov==7.1.0",
   "ruff==0.15.22",
 ]
 release = [
-  "build==1.4.0",
+  "build==1.5.0",
   "pip-audit==2.10.0",
-  "twine==6.2.0",
+  "twine==7.0.0",
 ]
 
 [project.scripts]
