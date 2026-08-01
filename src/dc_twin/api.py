@@ -39,7 +39,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="Data Center Electrical Digital Twin",
+    title="dc-twin electrical simulator",
     version="0.1.0",
     description=(
         "Read-only deterministic capacity simulation for allowlisted synthetic electrical "
