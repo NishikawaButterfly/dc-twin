@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Read-only interface for deterministic, synthetic data-center electrical capacity simulations."
+    />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#102a43" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <title>Data Center Electrical Digital Twin</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to simulation results</a>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand" aria-label="Data Center Electrical Digital Twin">
+          <span class="brand-mark" aria-hidden="true">DT</span>
+          <span>
+            <strong>Electrical Digital Twin</strong>
+            <small>Deterministic capacity simulation</small>
+          </span>
+        </div>
+        <div class="environment-badge"><span aria-hidden="true">●</span> Synthetic reference model</div>
+      </div>
+    </header>
+
+    <main id="main-content" class="page-shell" tabindex="-1">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Data center resilience analysis</p>
+          <h1 id="page-title">Understand capacity through every modeled event.</h1>
+          <p class="hero-copy">
+            Run a deterministic reference scenario, inspect the electrical-path state at each
+            transition, and trace every result to its model version and input hashes.
+          </p>
+        </div>
+        <aside class="scope-notice" aria-labelledby="scope-title">
+          <div class="scope-icon" aria-hidden="true">i</div>
+          <div>
+            <h2 id="scope-title">Model scope</h2>
+            <p>
+              This read-only tool uses synthetic data and a simplified active-power capacity
+              model. It is not AC power flow, a protection or coordination study, equipment
+              certification, or a live control system.
+            </p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="control-panel" aria-labelledby="run-title">
+        <div class="control-heading">
+          <div>
+            <p class="section-kicker">Reference scenario</p>
+            <h2 id="run-title">Select and run</h2>
+          </div>
+          <button id="refresh-button" class="button button-quiet" type="button">
+            <span aria-hidden="true">↻</span> Refresh list
+          </button>
+        </div>
+
+        <div class="control-grid">
+          <div class="field">
+            <label for="scenario-select">Scenario</label>
+            <select id="scenario-select" aria-describedby="scenario-description" disabled>
+              <option value="">Loading reference scenarios…</option>
+            </select>
+            <p id="scenario-description" class="field-help">
+              Scenario details will appear after the reference catalog loads.
+            </p>
+          </div>
+          <div class="run-actions">
+            <button id="run-button" class="button button-primary" type="button" disabled>
+              <span aria-hidden="true">▶</span> Run scenario
+            </button>
+            <button
+              id="replay-button"
+              class="button button-secondary"
+              type="button"
+              aria-describedby="replay-help"
+              disabled
+            >
+              <span aria-hidden="true">⟳</span> Replay and verify
+            </button>
+            <p id="replay-help" class="field-help">
+              Replay compares deterministic computation hashes for the same scenario.
+            </p>
+          </div>
+        </div>
+
+        <div id="status-panel" class="status-panel status-loading" role="status" aria-live="polite">
+          <span id="status-symbol" class="status-symbol" aria-hidden="true">…</span>
+          <div>
+            <strong id="status-title">Loading scenario catalog</strong>
+            <p id="status-detail">Connecting to the read-only simulation API.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="empty-state" class="empty-state" aria-labelledby="empty-title">
+        <div class="empty-diagram" aria-hidden="true">
+          <span>A</span><i></i><b>LOAD</b><i></i><span>B</span>
+        </div>
+        <h2 id="empty-title">No simulation result yet</h2>
+        <p>Select a reference scenario and run it to inspect service, topology, and event evidence.</p>
+      </section>
+
+      <div id="results" class="results" hidden>
+        <section class="results-heading" aria-labelledby="results-title">
+          <div>
+            <p class="section-kicker">Simulation result</p>
+            <h2 id="results-title">Scenario outcome</h2>
+            <p id="result-summary" class="result-summary"></p>
+          </div>
+          <div class="download-actions" aria-label="Download simulation evidence">
+            <button id="download-json" class="button button-secondary" type="button">
+              <span aria-hidden="true">↓</span> Result JSON
+            </button>
+            <button id="download-csv" class="button button-secondary" type="button">
+              <span aria-hidden="true">↓</span> Telemetry CSV
+            </button>
+          </div>
+        </section>
+
+        <section class="kpi-grid" aria-label="Scenario-level energy metrics">
+          <article class="kpi-card">
+            <p class="kpi-label">Demanded energy</p>
+            <p id="metric-demanded" class="kpi-value">—</p>
+            <p class="kpi-context">Across this modeled scenario only</p>
+            <details class="explanation">
+              <summary>Why this value?</summary>
+              <p id="explain-demanded"></p>
+            </details>
+          </article>
+          <article class="kpi-card">
+            <p class="kpi-label">Served energy</p>
+            <p id="metric-served" class="kpi-value">—</p>
+            <p class="kpi-context">Delivered by modeled available paths</p>
+            <details class="explanation">
+              <summary>Why this value?</summary>
+              <p id="explain-served"></p>
+            </details>
+          </article>
+          <article class="kpi-card kpi-alert">
+            <p class="kpi-label">Unserved energy</p>
+            <p id="metric-unserved" class="kpi-value">—</p>
+            <p class="kpi-context">Demand not served in this scenario</p>
+            <details class="explanation">
+              <summary>Why this value?</summary>
+              <p id="explain-unserved"></p>
+            </details>
+          </article>
+          <article class="kpi-card">
+            <p class="kpi-label">Scenario service ratio</p>
+            <p id="metric-ratio" class="kpi-value">—</p>
+            <p class="kpi-context">Not a site-availability or SLA claim</p>
+            <details class="explanation">
+              <summary>Why this value?</summary>
+              <p id="explain-ratio"></p>
+            </details>
+          </article>
+          <article class="kpi-card">
+            <p class="kpi-label">Modeled redundancy state</p>
+            <p id="metric-redundancy" class="kpi-value kpi-value-text">—</p>
+            <p class="kpi-context">Scenario state, not certification</p>
+            <details class="explanation">
+              <summary>Why this value?</summary>
+              <p id="explain-redundancy"></p>
+            </details>
+          </article>
+        </section>
+
+        <section class="panel timeline-panel" aria-labelledby="timeline-title">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Deterministic replay</p>
+              <h2 id="timeline-title">Timeline position</h2>
+            </div>
+            <output id="timeline-output" for="timeline-slider">—</output>
+          </div>
+          <label class="sr-only" for="timeline-slider">Simulation timeline step</label>
+          <input id="timeline-slider" type="range" min="0" max="0" step="1" value="0" disabled />
+          <div class="timeline-axis" aria-hidden="true">
+            <span>Scenario start</span>
+            <span>Scenario end</span>
+          </div>
+          <div id="timeline-state" class="timeline-state">
+            Select a timeline position to inspect modeled state.
+          </div>
+        </section>
+
+        <div class="two-column-layout">
+          <section class="panel topology-panel" aria-labelledby="topology-title">
+            <div class="panel-heading">
+              <div>
+                <p class="section-kicker">Modeled capacity paths</p>
+                <h2 id="topology-title">Topology at selected time</h2>
+              </div>
+              <span id="topology-status" class="state-badge state-unknown">— Unknown</span>
+            </div>
+            <div class="topology-frame">
+              <svg
+                id="topology-diagram"
+                viewBox="0 0 780 300"
+                role="img"
+                aria-labelledby="topology-svg-title topology-svg-description"
+              >
+                <title id="topology-svg-title">Modeled electrical capacity paths</title>
+                <desc id="topology-svg-description">
+                  Current states for capacity paths A and B and the modeled critical load.
+                </desc>
+              </svg>
+            </div>
+            <p class="panel-note">
+              The diagram reports modeled logical state and active-power capacity. It does not
+              establish voltage, fault current, selectivity, or physical switching safety.
+            </p>
+          </section>
+
+          <section class="panel chart-panel" aria-labelledby="capacity-title">
+            <div class="panel-heading">
+              <div>
+                <p class="section-kicker">Selected interval</p>
+                <h2 id="capacity-title">Served versus unserved load</h2>
+              </div>
+            </div>
+            <div
+              id="load-chart"
+              class="load-chart"
+              role="img"
+              aria-label="No selected interval load data"
+            >
+              <div class="chart-track">
+                <div id="served-bar" class="chart-segment served-bar"></div>
+                <div id="unserved-bar" class="chart-segment unserved-bar"></div>
+              </div>
+              <div class="chart-legend">
+                <span><i class="legend-key served-key" aria-hidden="true"></i> Served</span>
+                <strong id="served-now">—</strong>
+                <span><i class="legend-key unserved-key" aria-hidden="true"></i> Unserved</span>
+                <strong id="unserved-now">—</strong>
+                <span><i class="legend-key demand-key" aria-hidden="true"></i> Demanded</span>
+                <strong id="demanded-now">—</strong>
+              </div>
+            </div>
+
+            <div class="ups-card">
+              <div class="ups-heading">
+                <div>
+                  <p class="kpi-label">Aggregate modeled UPS energy</p>
+                  <p id="ups-now" class="ups-value">—</p>
+                </div>
+                <span id="ups-minimum" class="small-badge">Minimum: —</span>
+              </div>
+              <div
+                id="ups-meter"
+                class="ups-meter"
+                role="meter"
+                aria-label="Aggregate modeled UPS energy"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span id="ups-fill"></span>
+              </div>
+              <p class="panel-note">
+                The value sums reported battery-energy states. It is synthetic and
+                scenario-specific.
+              </p>
+            </div>
+          </section>
+        </div>
+
+        <section class="panel evidence-panel" aria-labelledby="evidence-title">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Causal evidence</p>
+              <h2 id="evidence-title">Events and alarms</h2>
+            </div>
+            <span id="evidence-count" class="small-badge">0 records</span>
+          </div>
+          <div class="table-scroll" tabindex="0" aria-label="Scrollable events and alarms table">
+            <table>
+              <caption class="sr-only">
+                Ordered simulation transitions and alarms, including time, category, status,
+                component, and explanation.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Time</th>
+                  <th scope="col">Category</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Component</th>
+                  <th scope="col">Explanation</th>
+                </tr>
+              </thead>
+              <tbody id="evidence-body"></tbody>
+            </table>
+          </div>
+          <p id="evidence-empty" class="inline-empty" hidden>No events or alarms were reported.</p>
+        </section>
+
+        <section class="panel provenance-panel" aria-labelledby="provenance-title">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Reproducibility</p>
+              <h2 id="provenance-title">Run provenance</h2>
+            </div>
+          </div>
+          <dl class="provenance-grid">
+            <div><dt>Run ID</dt><dd id="provenance-run">—</dd></div>
+            <div><dt>Engine version</dt><dd id="provenance-engine">—</dd></div>
+            <div><dt>Computation hash</dt><dd id="provenance-computation">—</dd></div>
+            <div><dt>Snapshot hash</dt><dd id="provenance-snapshot">—</dd></div>
+            <div><dt>Scenario hash</dt><dd id="provenance-scenario">—</dd></div>
+          </dl>
+          <p class="panel-note">
+            Hashes identify modeled inputs and deterministic computation output. A matching hash
+            supports reproducibility; it does not validate real-world equipment or operation.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <p>Read-only synthetic engineering demonstrator · No live telemetry · No control commands</p>
+    </footer>
+  </body>
+</html>

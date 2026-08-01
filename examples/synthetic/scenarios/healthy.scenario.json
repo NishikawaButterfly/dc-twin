@@ -1,0 +1,11 @@
+{
+  "schema_id": "dc-twin.scenario",
+  "schema_version": "1.0.0",
+  "scenario_id": "REF-DC-2N-HEALTHY",
+  "label": "Healthy 2N reference operation",
+  "snapshot_id": "reference-2n",
+  "horizon_ms": 600000,
+  "resolution_ms": 1000,
+  "data_classification": "synthetic",
+  "events": []
+}

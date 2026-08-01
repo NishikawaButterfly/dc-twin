@@ -1,0 +1,81 @@
+name: dc-twin
+
+services:
+  database:
+    image: postgres:18.4-alpine3.24@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+    environment:
+      POSTGRES_DB: dc_twin
+      POSTGRES_USER: dc_twin
+      POSTGRES_PASSWORD: ${DC_TWIN_POSTGRES_PASSWORD:-local-development-only}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dc_twin -d dc_twin"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      target: runtime
+    entrypoint: ["alembic"]
+    command: ["upgrade", "head"]
+    environment:
+      DC_TWIN_DATABASE_URL: postgresql+psycopg://dc_twin:${DC_TWIN_POSTGRES_PASSWORD:-local-development-only}@database:5432/dc_twin
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - backend
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      target: runtime
+    environment:
+      DC_TWIN_DATABASE_URL: postgresql+psycopg://dc_twin:${DC_TWIN_POSTGRES_PASSWORD:-local-development-only}@database:5432/dc_twin
+      DC_TWIN_HOST: 0.0.0.0
+      DC_TWIN_PORT: 8000
+      DC_TWIN_LOG_LEVEL: INFO
+    depends_on:
+      database:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - backend
+      - edge
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    init: true
+    restart: unless-stopped
+
+networks:
+  backend:
+    internal: true
+  edge: {}
+
+volumes:
+  postgres_data:

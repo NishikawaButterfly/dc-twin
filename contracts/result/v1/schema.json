@@ -1,0 +1,414 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/NishikawaButterfly/dc-twin/main/contracts/result/v1/schema.json",
+  "title": "Simulation Result v1",
+  "description": "A deterministic, traceable result for the simplified electrical capacity simulator. It is not an AC power-flow, protection, certification, or control-system result.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_version",
+    "run_id",
+    "engine_version",
+    "snapshot_hash",
+    "scenario_hash",
+    "computation_hash",
+    "scenario",
+    "metrics",
+    "timeline",
+    "transitions",
+    "alarms",
+    "telemetry",
+    "explanations"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "dc-twin.simulation-result"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "run_id": {
+      "$ref": "#/$defs/id"
+    },
+    "engine_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"
+    },
+    "snapshot_hash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "scenario_hash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "computation_hash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenario_id", "label", "horizon_ms"],
+      "properties": {
+        "scenario_id": { "$ref": "#/$defs/id" },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "horizon_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 604800000
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "demanded_energy_mj",
+        "served_energy_mj",
+        "unserved_energy_mj",
+        "service_ratio_ppm",
+        "interruption_duration_ms",
+        "interruption_count",
+        "peak_demand_w",
+        "peak_served_w",
+        "peak_stranded_capacity_w",
+        "minimum_served_w",
+        "modeled_redundancy_state"
+      ],
+      "properties": {
+        "demanded_energy_mj": { "$ref": "#/$defs/nonnegative_integer" },
+        "served_energy_mj": { "$ref": "#/$defs/nonnegative_integer" },
+        "unserved_energy_mj": { "$ref": "#/$defs/nonnegative_integer" },
+        "service_ratio_ppm": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "interruption_duration_ms": { "$ref": "#/$defs/nonnegative_integer" },
+        "interruption_count": { "$ref": "#/$defs/nonnegative_integer" },
+        "peak_demand_w": { "$ref": "#/$defs/nonnegative_integer" },
+        "peak_served_w": { "$ref": "#/$defs/nonnegative_integer" },
+        "peak_stranded_capacity_w": { "$ref": "#/$defs/nonnegative_integer" },
+        "minimum_served_w": { "$ref": "#/$defs/nonnegative_integer" },
+        "modeled_redundancy_state": {
+          "type": "string",
+          "enum": ["two_n", "supported", "single_path", "battery_backed", "partial_service", "no_path", "no_demand"]
+        }
+      }
+    },
+    "timeline": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/timeline_segment"
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/transition"
+      }
+    },
+    "alarms": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "$ref": "#/$defs/alarm"
+      }
+    },
+    "telemetry": {
+      "type": "array",
+      "maxItems": 250000,
+      "items": {
+        "$ref": "#/$defs/telemetry_point"
+      }
+    },
+    "explanations": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "$ref": "#/$defs/explanation"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "trace_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "nonnegative_integer": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000000000000000000000
+    },
+    "component_integer_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+      },
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$": {
+          "$ref": "#/$defs/nonnegative_integer"
+        }
+      }
+    },
+    "timeline_segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start_ms",
+        "end_ms",
+        "demand_w",
+        "served_w",
+        "unserved_w",
+        "stranded_capacity_w",
+        "redundancy_state",
+        "battery_energy_mj",
+        "source_power_w",
+        "load_service_w",
+        "connection_flow_w",
+        "state_hash",
+        "causal_event_ids"
+      ],
+      "properties": {
+        "start_ms": { "$ref": "#/$defs/nonnegative_integer" },
+        "end_ms": { "$ref": "#/$defs/nonnegative_integer" },
+        "demand_w": { "$ref": "#/$defs/nonnegative_integer" },
+        "served_w": { "$ref": "#/$defs/nonnegative_integer" },
+        "unserved_w": { "$ref": "#/$defs/nonnegative_integer" },
+        "stranded_capacity_w": { "$ref": "#/$defs/nonnegative_integer" },
+        "redundancy_state": {
+          "type": "string",
+          "enum": ["two_n", "supported", "single_path", "battery_backed", "partial_service", "no_path", "no_demand"]
+        },
+        "battery_energy_mj": { "$ref": "#/$defs/component_integer_map" },
+        "source_power_w": { "$ref": "#/$defs/component_integer_map" },
+        "load_service_w": { "$ref": "#/$defs/component_integer_map" },
+        "connection_flow_w": { "$ref": "#/$defs/component_integer_map" },
+        "state_hash": { "$ref": "#/$defs/sha256" },
+        "causal_event_ids": {
+          "type": "array",
+          "maxItems": 4096,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/trace_id" }
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "time_ms",
+        "event_id",
+        "event_kind",
+        "target_id",
+        "before_state_hash",
+        "after_state_hash",
+        "alarms_raised",
+        "alarms_cleared"
+      ],
+      "properties": {
+        "sequence": { "$ref": "#/$defs/nonnegative_integer" },
+        "time_ms": { "$ref": "#/$defs/nonnegative_integer" },
+        "event_id": { "$ref": "#/$defs/trace_id" },
+        "event_kind": {
+          "type": "string",
+          "enum": [
+            "component_failure",
+            "component_restore",
+            "maintenance_start",
+            "maintenance_end",
+            "generator_running",
+            "generator_start_failure",
+            "atomic_transfer",
+            "load_step",
+            "system_initialization",
+            "ups_low_energy",
+            "ups_depleted"
+          ]
+        },
+        "target_id": {
+          "oneOf": [
+            { "$ref": "#/$defs/id" },
+            { "type": "null" }
+          ]
+        },
+        "before_state_hash": { "$ref": "#/$defs/sha256" },
+        "after_state_hash": { "$ref": "#/$defs/sha256" },
+        "alarms_raised": {
+          "type": "array",
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "alarms_cleared": {
+          "type": "array",
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      }
+    },
+    "alarm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "time_ms", "severity", "code", "message", "component_id", "causal_event_id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "time_ms": { "$ref": "#/$defs/nonnegative_integer" },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "warning", "critical"]
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "component_id": {
+          "oneOf": [
+            { "$ref": "#/$defs/id" },
+            { "type": "null" }
+          ]
+        },
+        "causal_event_id": {
+          "oneOf": [
+            { "$ref": "#/$defs/trace_id" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "telemetry_point": {
+      "oneOf": [
+        { "$ref": "#/$defs/power_telemetry_point" },
+        { "$ref": "#/$defs/energy_telemetry_point" },
+        { "$ref": "#/$defs/state_telemetry_point" }
+      ]
+    },
+    "power_telemetry_point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "time_ms", "component_id", "metric", "value", "unit", "quality", "state_hash"],
+      "properties": {
+        "sequence": { "$ref": "#/$defs/nonnegative_integer" },
+        "time_ms": { "$ref": "#/$defs/nonnegative_integer" },
+        "component_id": { "$ref": "#/$defs/id" },
+        "metric": {
+          "type": "string",
+          "enum": ["demand_w", "served_w", "unserved_w", "source_power_w", "served_power_w"]
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000000000000
+        },
+        "unit": { "const": "W" },
+        "quality": { "const": "synthetic" },
+        "state_hash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "energy_telemetry_point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "time_ms", "component_id", "metric", "value", "unit", "quality", "state_hash"],
+      "properties": {
+        "sequence": { "$ref": "#/$defs/nonnegative_integer" },
+        "time_ms": { "$ref": "#/$defs/nonnegative_integer" },
+        "component_id": { "$ref": "#/$defs/id" },
+        "metric": { "const": "stored_energy_mj" },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000000000000000
+        },
+        "unit": { "const": "mJ" },
+        "quality": { "const": "synthetic" },
+        "state_hash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "state_telemetry_point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "time_ms", "component_id", "metric", "value", "unit", "quality", "state_hash"],
+      "properties": {
+        "sequence": { "$ref": "#/$defs/nonnegative_integer" },
+        "time_ms": { "$ref": "#/$defs/nonnegative_integer" },
+        "component_id": { "$ref": "#/$defs/id" },
+        "metric": { "const": "modeled_redundancy_state" },
+        "value": {
+          "type": "string",
+          "enum": ["two_n", "supported", "single_path", "battery_backed", "partial_service", "no_path", "no_demand"]
+        },
+        "unit": { "const": "state" },
+        "quality": { "const": "synthetic" },
+        "state_hash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "explanation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["formula", "input_refs", "event_refs", "summary"],
+      "properties": {
+        "formula": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "input_refs": {
+          "type": "array",
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "event_refs": {
+          "type": "array",
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/trace_id" }
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      }
+    }
+  }
+}

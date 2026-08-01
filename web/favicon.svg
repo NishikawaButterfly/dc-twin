@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Electrical Digital Twin</title>
+  <rect width="64" height="64" rx="12" fill="#102a43" />
+  <path d="M13 20h16v8H13zm22 0h16v8H35zM13 36h16v8H13zm22 0h16v8H35z" fill="#e8f4f6" />
+  <path d="M29 24h6M21 28v8m22-8v8m-14 4h6" fill="none" stroke="#46b3c7" stroke-width="4" stroke-linecap="round" />
+</svg>

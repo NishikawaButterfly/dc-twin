@@ -1,0 +1,331 @@
+{
+  "schema_id": "dc-twin.electrical-design-snapshot",
+  "schema_version": "1.0.0",
+  "snapshot_id": "reference-2n",
+  "design_revision": "1.0.0",
+  "data_classification": "synthetic",
+  "provenance": {
+    "title": "Synthetic 2N reference topology",
+    "created_by": "NishikawaButterfly",
+    "method": "Purpose-built fictional topology for deterministic software verification; no operational, customer, or site data was used."
+  },
+  "units": {
+    "power": "W",
+    "energy": "mJ",
+    "time": "ms"
+  },
+  "assumptions": [
+    "The model allocates lossless active-power capacity only.",
+    "Voltage, frequency, phase, reactive power, harmonics, inrush, and conversion efficiency are outside scope.",
+    "Connection state changes are scenario inputs and do not issue commands to equipment.",
+    "Each UPS has 120 kWh of initially available modeled energy and no recharge behavior.",
+    "The two fictional 800 kW loads are dual-corded and normally receive 400 kW from each path.",
+    "Equal-timestamp events execute by documented semantic safety priority and then event ID."
+  ],
+  "components": [
+    {
+      "id": "utility-a",
+      "label": "Synthetic utility source A",
+      "kind": "utility",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "generator-a",
+      "label": "Synthetic standby generator A",
+      "kind": "generator",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available",
+      "start_delay_ms": 15000
+    },
+    {
+      "id": "ats-a",
+      "label": "Automatic transfer switch A",
+      "kind": "ats",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "transformer-a",
+      "label": "Synthetic transformer A",
+      "kind": "transformer",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "switchgear-a",
+      "label": "Synthetic switchgear A",
+      "kind": "switchgear",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "ups-a",
+      "label": "Synthetic UPS A",
+      "kind": "ups",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available",
+      "usable_energy_mj": 432000000000,
+      "low_energy_threshold_pct": 20
+    },
+    {
+      "id": "pdu-a",
+      "label": "Synthetic PDU A",
+      "kind": "pdu",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "utility-b",
+      "label": "Synthetic utility source B",
+      "kind": "utility",
+      "path": "B",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "generator-b",
+      "label": "Synthetic standby generator B",
+      "kind": "generator",
+      "path": "B",
+      "capacity_w": 2000000,
+      "initial_status": "available",
+      "start_delay_ms": 15000
+    },
+    {
+      "id": "ats-b",
+      "label": "Automatic transfer switch B",
+      "kind": "ats",
+      "path": "B",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "transformer-b",
+      "label": "Synthetic transformer B",
+      "kind": "transformer",
+      "path": "B",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "switchgear-b",
+      "label": "Synthetic switchgear B",
+      "kind": "switchgear",
+      "path": "B",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "ups-b",
+      "label": "Synthetic UPS B",
+      "kind": "ups",
+      "path": "B",
+      "capacity_w": 2000000,
+      "initial_status": "available",
+      "usable_energy_mj": 432000000000,
+      "low_energy_threshold_pct": 20
+    },
+    {
+      "id": "pdu-b",
+      "label": "Synthetic PDU B",
+      "kind": "pdu",
+      "path": "B",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "it-load-1",
+      "label": "Synthetic dual-cord IT load 1",
+      "kind": "load",
+      "path": "shared",
+      "capacity_w": 800000,
+      "initial_status": "available",
+      "demand_w": 800000,
+      "priority": 1,
+      "service_order": 1
+    },
+    {
+      "id": "it-load-2",
+      "label": "Synthetic dual-cord IT load 2",
+      "kind": "load",
+      "path": "shared",
+      "capacity_w": 800000,
+      "initial_status": "available",
+      "demand_w": 800000,
+      "priority": 1,
+      "service_order": 2
+    }
+  ],
+  "connections": [
+    {
+      "id": "utility-a-to-ats-a",
+      "from_component": "utility-a",
+      "to_component": "ats-a",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "generator-a-to-ats-a",
+      "from_component": "generator-a",
+      "to_component": "ats-a",
+      "capacity_w": 2000000,
+      "initial_closed": false
+    },
+    {
+      "id": "ats-a-to-transformer-a",
+      "from_component": "ats-a",
+      "to_component": "transformer-a",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "transformer-a-to-switchgear-a",
+      "from_component": "transformer-a",
+      "to_component": "switchgear-a",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "switchgear-a-to-ups-a",
+      "from_component": "switchgear-a",
+      "to_component": "ups-a",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "ups-a-to-pdu-a",
+      "from_component": "ups-a",
+      "to_component": "pdu-a",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "utility-b-to-ats-b",
+      "from_component": "utility-b",
+      "to_component": "ats-b",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "generator-b-to-ats-b",
+      "from_component": "generator-b",
+      "to_component": "ats-b",
+      "capacity_w": 2000000,
+      "initial_closed": false
+    },
+    {
+      "id": "ats-b-to-transformer-b",
+      "from_component": "ats-b",
+      "to_component": "transformer-b",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "transformer-b-to-switchgear-b",
+      "from_component": "transformer-b",
+      "to_component": "switchgear-b",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "switchgear-b-to-ups-b",
+      "from_component": "switchgear-b",
+      "to_component": "ups-b",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "ups-b-to-pdu-b",
+      "from_component": "ups-b",
+      "to_component": "pdu-b",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "pdu-a-to-load-1-normal",
+      "from_component": "pdu-a",
+      "to_component": "it-load-1",
+      "capacity_w": 400000,
+      "initial_closed": true
+    },
+    {
+      "id": "pdu-a-to-load-1-transfer",
+      "from_component": "pdu-a",
+      "to_component": "it-load-1",
+      "capacity_w": 400000,
+      "initial_closed": false
+    },
+    {
+      "id": "pdu-b-to-load-1-normal",
+      "from_component": "pdu-b",
+      "to_component": "it-load-1",
+      "capacity_w": 400000,
+      "initial_closed": true
+    },
+    {
+      "id": "pdu-b-to-load-1-transfer",
+      "from_component": "pdu-b",
+      "to_component": "it-load-1",
+      "capacity_w": 400000,
+      "initial_closed": false
+    },
+    {
+      "id": "pdu-a-to-load-2-normal",
+      "from_component": "pdu-a",
+      "to_component": "it-load-2",
+      "capacity_w": 400000,
+      "initial_closed": true
+    },
+    {
+      "id": "pdu-a-to-load-2-transfer",
+      "from_component": "pdu-a",
+      "to_component": "it-load-2",
+      "capacity_w": 400000,
+      "initial_closed": false
+    },
+    {
+      "id": "pdu-b-to-load-2-normal",
+      "from_component": "pdu-b",
+      "to_component": "it-load-2",
+      "capacity_w": 400000,
+      "initial_closed": true
+    },
+    {
+      "id": "pdu-b-to-load-2-transfer",
+      "from_component": "pdu-b",
+      "to_component": "it-load-2",
+      "capacity_w": 400000,
+      "initial_closed": false
+    }
+  ],
+  "redundancy_groups": [
+    {
+      "id": "source-a-n-plus-1",
+      "mode": "N_PLUS_1",
+      "members": ["utility-a", "generator-a"]
+    },
+    {
+      "id": "source-b-n-plus-1",
+      "mode": "N_PLUS_1",
+      "members": ["utility-b", "generator-b"]
+    },
+    {
+      "id": "ups-two-n",
+      "mode": "TWO_N",
+      "members": ["ups-a", "ups-b"]
+    },
+    {
+      "id": "distribution-two-n",
+      "mode": "TWO_N",
+      "members": ["pdu-a", "pdu-b"]
+    }
+  ]
+}

@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/NishikawaButterfly/dc-twin/main/contracts/electrical-design-snapshot/v1/schema.json",
+  "title": "Electrical Design Snapshot v1",
+  "description": "A strict, synthetic-only boundary contract for a simplified electrical capacity topology. This is not an AC power-flow, protection, certification, or control-system model.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_version",
+    "snapshot_id",
+    "design_revision",
+    "data_classification",
+    "provenance",
+    "units",
+    "assumptions",
+    "components",
+    "connections",
+    "redundancy_groups"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "dc-twin.electrical-design-snapshot"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "snapshot_id": {
+      "$ref": "#/$defs/id"
+    },
+    "design_revision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "data_classification": {
+      "const": "synthetic"
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "created_by", "method"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "created_by": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        }
+      }
+    },
+    "units": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["power", "energy", "time"],
+      "properties": {
+        "power": {
+          "const": "W"
+        },
+        "energy": {
+          "const": "mJ"
+        },
+        "time": {
+          "const": "ms"
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "maxItems": 50,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 250,
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/utility_component" },
+          { "$ref": "#/$defs/generator_component" },
+          { "$ref": "#/$defs/switchgear_component" },
+          { "$ref": "#/$defs/transformer_component" },
+          { "$ref": "#/$defs/ups_component" },
+          { "$ref": "#/$defs/ats_component" },
+          { "$ref": "#/$defs/sts_component" },
+          { "$ref": "#/$defs/pdu_component" },
+          { "$ref": "#/$defs/load_component" }
+        ]
+      }
+    },
+    "connections": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": {
+        "$ref": "#/$defs/connection"
+      }
+    },
+    "redundancy_groups": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/redundancy_group"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "path": {
+      "type": "string",
+      "enum": ["A", "B", "shared"]
+    },
+    "capacity_w": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10000000000
+    },
+    "initial_status": {
+      "type": "string",
+      "enum": ["available", "failed", "maintenance"]
+    },
+    "utility_component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "path", "capacity_w", "initial_status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/label" },
+        "kind": { "const": "utility" },
+        "path": { "$ref": "#/$defs/path" },
+        "capacity_w": { "$ref": "#/$defs/capacity_w" },
+        "initial_status": { "$ref": "#/$defs/initial_status" }
+      }
+    },
+    "generator_component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "path", "capacity_w", "initial_status", "start_delay_ms"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/label" },
+        "kind": { "const": "generator" },
+        "path": { "$ref": "#/$defs/path" },
+        "capacity_w": { "$ref": "#/$defs/capacity_w" },
+        "initial_status": { "$ref": "#/$defs/initial_status" },
+        "start_delay_ms": {
+          "description": "Minimum elapsed time after the latest preceding same-path utility failure before a scenario may declare the generator running or failed to start.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3600000
+        }
+      }
+    },
+    "switchgear_component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "path", "capacity_w", "initial_status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/label" },
+        "kind": { "const": "switchgear" },
+        "path": { "$ref": "#/$defs/path" },
+        "capacity_w": { "$ref": "#/$defs/capacity_w" },
+        "initial_status": { "$ref": "#/$defs/initial_status" }
+      }
+    },
+    "transformer_component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "path", "capacity_w", "initial_status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/label" },
+        "kind": { "const": "transformer" },
+        "path": { "$ref": "#/$defs/path" },
+        "capacity_w": { "$ref": "#/$defs/capacity_w" },
+        "initial_status": { "$ref": "#/$defs/initial_status" }
+      }
+    },
+    "ups_component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "path", "capacity_w", "initial_status", "usable_energy_mj", "low_energy_threshold_pct"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/label" },
+        "kind": { "const": "ups" },
+        "path": { "$ref": "#/$defs/path" },
+        "capacity_w": { "$ref": "#/$defs/capacity_w" },
+        "initial_status": { "$ref": "#/$defs/initial_status" },
+        "usable_energy_mj": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000000000000
+        },
+        "low_energy_threshold_pct": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99
+        }
+      }
+    },
+    "ats_component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "path", "capacity_w", "initial_status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/label" },
+        "kind": { "const": "ats" },
+        "path": { "$ref": "#/$defs/path" },
+        "capacity_w": { "$ref": "#/$defs/capacity_w" },
+        "initial_status": { "$ref": "#/$defs/initial_status" }
+      }
+    },
+    "sts_component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "path", "capacity_w", "initial_status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/label" },
+        "kind": { "const": "sts" },
+        "path": { "$ref": "#/$defs/path" },
+        "capacity_w": { "$ref": "#/$defs/capacity_w" },
+        "initial_status": { "$ref": "#/$defs/initial_status" }
+      }
+    },
+    "pdu_component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "path", "capacity_w", "initial_status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/label" },
+        "kind": { "const": "pdu" },
+        "path": { "$ref": "#/$defs/path" },
+        "capacity_w": { "$ref": "#/$defs/capacity_w" },
+        "initial_status": { "$ref": "#/$defs/initial_status" }
+      }
+    },
+    "load_component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "path", "capacity_w", "initial_status", "demand_w", "priority", "service_order"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/label" },
+        "kind": { "const": "load" },
+        "path": { "$ref": "#/$defs/path" },
+        "capacity_w": { "$ref": "#/$defs/capacity_w" },
+        "initial_status": { "$ref": "#/$defs/initial_status" },
+        "demand_w": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000000000
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "service_order": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        }
+      }
+    },
+    "connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "from_component", "to_component", "capacity_w", "initial_closed"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "from_component": { "$ref": "#/$defs/id" },
+        "to_component": { "$ref": "#/$defs/id" },
+        "capacity_w": { "$ref": "#/$defs/capacity_w" },
+        "initial_closed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "redundancy_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "mode", "members"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "mode": {
+          "type": "string",
+          "enum": ["N", "N_PLUS_1", "TWO_N"]
+        },
+        "members": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      }
+    }
+  }
+}

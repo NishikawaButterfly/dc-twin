@@ -1,0 +1,53 @@
+{
+  "schema_id": "dc-twin.scenario",
+  "schema_version": "1.0.0",
+  "scenario_id": "REF-DC-2N-GEN-SUCCESS",
+  "label": "PDU B maintenance with utility A loss and successful generator A transfer",
+  "snapshot_id": "reference-2n",
+  "horizon_ms": 600000,
+  "resolution_ms": 1000,
+  "data_classification": "synthetic",
+  "events": [
+    {
+      "id": "event-001-pdu-b-maintenance",
+      "time_ms": 62000,
+      "kind": "maintenance_start",
+      "component_id": "pdu-b",
+      "status": "maintenance"
+    },
+    {
+      "id": "event-002-transfer-loads-to-a",
+      "time_ms": 62000,
+      "kind": "atomic_transfer",
+      "open_connection_ids": [
+        "pdu-b-to-load-1-normal",
+        "pdu-b-to-load-2-normal"
+      ],
+      "close_connection_ids": [
+        "pdu-a-to-load-1-transfer",
+        "pdu-a-to-load-2-transfer"
+      ]
+    },
+    {
+      "id": "event-003-utility-a-failure",
+      "time_ms": 120000,
+      "kind": "component_failure",
+      "component_id": "utility-a",
+      "status": "failed"
+    },
+    {
+      "id": "event-004-generator-a-running",
+      "time_ms": 135000,
+      "kind": "generator_running",
+      "component_id": "generator-a",
+      "status": "available"
+    },
+    {
+      "id": "event-005-transfer-a-to-generator",
+      "time_ms": 135000,
+      "kind": "atomic_transfer",
+      "open_connection_ids": ["utility-a-to-ats-a"],
+      "close_connection_ids": ["generator-a-to-ats-a"]
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/NishikawaButterfly/dc-twin/main/contracts/scenario/v1/schema.json",
+  "title": "Simulation Scenario v1",
+  "description": "A strict, synthetic-only sequence of deterministic state changes for an electrical capacity simulation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_version",
+    "scenario_id",
+    "label",
+    "snapshot_id",
+    "horizon_ms",
+    "resolution_ms",
+    "data_classification",
+    "events"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "dc-twin.scenario"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "scenario_id": {
+      "$ref": "#/$defs/id"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "snapshot_id": {
+      "$ref": "#/$defs/id"
+    },
+    "horizon_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 604800000
+    },
+    "resolution_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 604800000
+    },
+    "data_classification": {
+      "const": "synthetic"
+    },
+    "events": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/component_failure" },
+          { "$ref": "#/$defs/component_restore" },
+          { "$ref": "#/$defs/maintenance_start" },
+          { "$ref": "#/$defs/maintenance_end" },
+          { "$ref": "#/$defs/generator_running" },
+          { "$ref": "#/$defs/generator_start_failure" },
+          { "$ref": "#/$defs/atomic_transfer" },
+          { "$ref": "#/$defs/load_step" }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+    },
+    "time_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 604800000
+    },
+    "component_failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "time_ms", "kind", "component_id", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/event_id" },
+        "time_ms": { "$ref": "#/$defs/time_ms" },
+        "kind": { "const": "component_failure" },
+        "component_id": { "$ref": "#/$defs/id" },
+        "status": { "const": "failed" }
+      }
+    },
+    "component_restore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "time_ms", "kind", "component_id", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/event_id" },
+        "time_ms": { "$ref": "#/$defs/time_ms" },
+        "kind": { "const": "component_restore" },
+        "component_id": { "$ref": "#/$defs/id" },
+        "status": { "const": "available" }
+      }
+    },
+    "maintenance_start": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "time_ms", "kind", "component_id", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/event_id" },
+        "time_ms": { "$ref": "#/$defs/time_ms" },
+        "kind": { "const": "maintenance_start" },
+        "component_id": { "$ref": "#/$defs/id" },
+        "status": { "const": "maintenance" }
+      }
+    },
+    "maintenance_end": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "time_ms", "kind", "component_id", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/event_id" },
+        "time_ms": { "$ref": "#/$defs/time_ms" },
+        "kind": { "const": "maintenance_end" },
+        "component_id": { "$ref": "#/$defs/id" },
+        "status": { "const": "available" }
+      }
+    },
+    "generator_running": {
+      "description": "Declares a generator running after a preceding same-path utility failure and its configured start delay.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "time_ms", "kind", "component_id", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/event_id" },
+        "time_ms": { "$ref": "#/$defs/time_ms" },
+        "kind": { "const": "generator_running" },
+        "component_id": { "$ref": "#/$defs/id" },
+        "status": { "const": "available" }
+      }
+    },
+    "generator_start_failure": {
+      "description": "Declares a failed generator start after a preceding same-path utility failure and its configured start delay.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "time_ms", "kind", "component_id", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/event_id" },
+        "time_ms": { "$ref": "#/$defs/time_ms" },
+        "kind": { "const": "generator_start_failure" },
+        "component_id": { "$ref": "#/$defs/id" },
+        "status": { "const": "failed" }
+      }
+    },
+    "atomic_transfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "time_ms", "kind", "open_connection_ids", "close_connection_ids"],
+      "properties": {
+        "id": { "$ref": "#/$defs/event_id" },
+        "time_ms": { "$ref": "#/$defs/time_ms" },
+        "kind": { "const": "atomic_transfer" },
+        "open_connection_ids": {
+          "type": "array",
+          "maxItems": 500,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "close_connection_ids": {
+          "type": "array",
+          "maxItems": 500,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      },
+      "anyOf": [
+        { "properties": { "open_connection_ids": { "minItems": 1 } } },
+        { "properties": { "close_connection_ids": { "minItems": 1 } } }
+      ]
+    },
+    "load_step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "time_ms", "kind", "component_id", "demand_w"],
+      "properties": {
+        "id": { "$ref": "#/$defs/event_id" },
+        "time_ms": { "$ref": "#/$defs/time_ms" },
+        "kind": { "const": "load_step" },
+        "component_id": { "$ref": "#/$defs/id" },
+        "demand_w": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000000000
+        }
+      }
+    }
+  }
+}
