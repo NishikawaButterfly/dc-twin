@@ -1,0 +1,33 @@
+{
+  "schema_id": "dc-twin.scenario",
+  "schema_version": "1.0.0",
+  "scenario_id": "REF-DC-NP1-001",
+  "label": "UPS R2 failure with immediate reserve pickup and delayed reserve input closure",
+  "snapshot_id": "reference-n-plus-1",
+  "horizon_ms": 600000,
+  "resolution_ms": 1000,
+  "data_classification": "synthetic",
+  "events": [
+    {
+      "id": "event-001-ups-r2-failure",
+      "time_ms": 120000,
+      "kind": "component_failure",
+      "component_id": "ups-r2",
+      "status": "failed"
+    },
+    {
+      "id": "event-002-reserve-output-close",
+      "time_ms": 120000,
+      "kind": "atomic_transfer",
+      "open_connection_ids": [],
+      "close_connection_ids": ["ups-r3-to-switchgear-r-out"]
+    },
+    {
+      "id": "event-003-reserve-input-close",
+      "time_ms": 150000,
+      "kind": "atomic_transfer",
+      "open_connection_ids": [],
+      "close_connection_ids": ["switchgear-r-in-to-ups-r3"]
+    }
+  ]
+}

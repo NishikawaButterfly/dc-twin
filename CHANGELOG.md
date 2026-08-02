@@ -4,6 +4,10 @@ All notable changes are documented here. This project follows [Semantic Versioni
 
 ## [Unreleased]
 
+### Added
+
+- Synthetic N and N+1 reference topologies, each with one hand-calculated scenario: a single-path utility loss with UPS ride-through to depletion, and an absorbed single-UPS failure with a bounded reserve battery bridge.
+
 ## [0.1.0] - 2026-08-01
 
 ### Added

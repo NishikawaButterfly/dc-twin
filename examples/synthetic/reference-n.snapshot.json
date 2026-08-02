@@ -1,0 +1,135 @@
+{
+  "schema_id": "dc-twin.electrical-design-snapshot",
+  "schema_version": "1.0.0",
+  "snapshot_id": "reference-n",
+  "design_revision": "1.0.0",
+  "data_classification": "synthetic",
+  "provenance": {
+    "title": "Synthetic N reference topology",
+    "created_by": "NishikawaButterfly",
+    "method": "Purpose-built fictional topology for deterministic software verification; no operational, customer, or site data was used."
+  },
+  "units": {
+    "power": "W",
+    "energy": "mJ",
+    "time": "ms"
+  },
+  "assumptions": [
+    "The model allocates lossless active-power capacity only.",
+    "Voltage, frequency, phase, reactive power, harmonics, inrush, and conversion efficiency are outside scope.",
+    "Connection state changes are scenario inputs and do not issue commands to equipment.",
+    "The single UPS has 50 kWh of initially available modeled energy and no recharge behavior.",
+    "The single fictional 1 MW load is single-corded and has no alternate supply path.",
+    "There is no standby generator; a utility loss leaves only the UPS battery.",
+    "Equal-timestamp events execute by documented semantic safety priority and then event ID."
+  ],
+  "components": [
+    {
+      "id": "utility-n",
+      "label": "Synthetic utility source N",
+      "kind": "utility",
+      "path": "A",
+      "capacity_w": 1000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "transformer-n",
+      "label": "Synthetic transformer N",
+      "kind": "transformer",
+      "path": "A",
+      "capacity_w": 1000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "switchgear-n",
+      "label": "Synthetic switchgear N",
+      "kind": "switchgear",
+      "path": "A",
+      "capacity_w": 1000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "ups-n",
+      "label": "Synthetic UPS N",
+      "kind": "ups",
+      "path": "A",
+      "capacity_w": 1000000,
+      "initial_status": "available",
+      "usable_energy_mj": 180000000000,
+      "low_energy_threshold_pct": 20
+    },
+    {
+      "id": "pdu-n",
+      "label": "Synthetic PDU N",
+      "kind": "pdu",
+      "path": "A",
+      "capacity_w": 1000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "it-load-n",
+      "label": "Synthetic single-cord IT load N",
+      "kind": "load",
+      "path": "shared",
+      "capacity_w": 1000000,
+      "initial_status": "available",
+      "demand_w": 1000000,
+      "priority": 1,
+      "service_order": 1
+    }
+  ],
+  "connections": [
+    {
+      "id": "utility-n-to-transformer-n",
+      "from_component": "utility-n",
+      "to_component": "transformer-n",
+      "capacity_w": 1000000,
+      "initial_closed": true
+    },
+    {
+      "id": "transformer-n-to-switchgear-n",
+      "from_component": "transformer-n",
+      "to_component": "switchgear-n",
+      "capacity_w": 1000000,
+      "initial_closed": true
+    },
+    {
+      "id": "switchgear-n-to-ups-n",
+      "from_component": "switchgear-n",
+      "to_component": "ups-n",
+      "capacity_w": 1000000,
+      "initial_closed": true
+    },
+    {
+      "id": "ups-n-to-pdu-n",
+      "from_component": "ups-n",
+      "to_component": "pdu-n",
+      "capacity_w": 1000000,
+      "initial_closed": true
+    },
+    {
+      "id": "pdu-n-to-it-load-n",
+      "from_component": "pdu-n",
+      "to_component": "it-load-n",
+      "capacity_w": 1000000,
+      "initial_closed": true
+    }
+  ],
+  "redundancy_groups": [
+    {
+      "id": "source-single-n",
+      "mode": "N",
+      "members": ["utility-n"]
+    },
+    {
+      "id": "ups-single-n",
+      "mode": "N",
+      "members": ["ups-n"]
+    },
+    {
+      "id": "distribution-single-n",
+      "mode": "N",
+      "members": ["pdu-n"]
+    }
+  ]
+}

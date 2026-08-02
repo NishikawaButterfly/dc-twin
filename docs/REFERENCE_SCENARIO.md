@@ -2,7 +2,7 @@
 
 ## Purpose and provenance
 
-The bundled `reference-2n` snapshot is a fictional verification fixture. It was designed from first principles for this repository and contains no customer, site, tender, monitoring, or incident data. The hand calculations below are independent of the implementation and form an acceptance oracle.
+The bundled `reference-2n` snapshot is a fictional verification fixture. It was designed from first principles for this repository and contains no customer, site, tender, monitoring, or incident data. The hand calculations below are independent of the implementation and form an acceptance oracle. The bundled N and N+1 fixtures are documented the same way in [Reference Topologies](REFERENCE_TOPOLOGIES.md).
 
 The topology has two nominal 2 MW paths, A and B. Each path contains a utility, standby generator, ATS, transformer, switchgear, 2 MW UPS, and PDU. Each UPS starts with 120 kWh of modeled usable energy:
 

@@ -30,7 +30,16 @@ class ApiTests(unittest.TestCase):
         catalog = self.client.get("/api/v1/reference-scenarios")
         self.assertEqual(catalog.status_code, 200)
         scenarios = catalog.json()["scenarios"]
-        self.assertEqual(len(scenarios), 3)
+        self.assertEqual(
+            [item["scenario_id"] for item in scenarios],
+            [
+                "REF-DC-2N-001",
+                "REF-DC-2N-GEN-SUCCESS",
+                "REF-DC-2N-HEALTHY",
+                "REF-DC-N-001",
+                "REF-DC-NP1-001",
+            ],
+        )
         scenario_id = next(
             item["scenario_id"] for item in scenarios if item["scenario_id"] == "REF-DC-2N-001"
         )
@@ -59,7 +68,7 @@ class ApiTests(unittest.TestCase):
     def test_static_interface_is_served(self) -> None:
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Electrical Digital Twin", response.text)
+        self.assertIn("Electrical Simulator", response.text)
 
     def test_static_assets_carry_executable_media_types(self) -> None:
         # Every response is nosniff, so a text/plain guess (seen on Windows,

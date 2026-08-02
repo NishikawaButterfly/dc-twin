@@ -38,8 +38,9 @@ def main() -> int:
     try:
         catalog = ReferenceCatalog.load()
         for reference in catalog.scenarios.values():
-            first = simulate(catalog.snapshot, reference.scenario)
-            second = simulate(catalog.snapshot, reference.scenario)
+            snapshot = catalog.snapshot_for(reference.scenario).snapshot
+            first = simulate(snapshot, reference.scenario)
+            second = simulate(snapshot, reference.scenario)
             if first["computation_hash"] != second["computation_hash"]:
                 failures.append(f"Replay drift for {reference.scenario.scenario_id}.")
     except Exception as exc:
@@ -54,8 +55,8 @@ def main() -> int:
         sys.stderr.write("Contract checks failed:\n- " + "\n- ".join(failures) + "\n")
         return 1
     sys.stdout.write(
-        f"Validated {len(schema_paths)} contracts "
-        f"and {len(catalog.scenarios)} reference scenarios.\n"
+        f"Validated {len(schema_paths)} contracts, {len(catalog.snapshots)} reference "
+        f"snapshots, and {len(catalog.scenarios)} reference scenarios.\n"
     )
     return 0
 

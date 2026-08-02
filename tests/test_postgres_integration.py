@@ -16,10 +16,11 @@ class PostgresStoreTests(unittest.TestCase):
         assert DATABASE_URL is not None
         catalog = ReferenceCatalog.load()
         reference = catalog.scenarios["REF-DC-2N-001"]
-        result = simulate(catalog.snapshot, reference.scenario)
+        reference_snapshot = catalog.snapshot_for(reference.scenario)
+        result = simulate(reference_snapshot.snapshot, reference.scenario)
         store = PostgresRunStore(DATABASE_URL)
-        store.save_run(result, snapshot=catalog.snapshot_raw, scenario=reference.raw)
-        store.save_run(result, snapshot=catalog.snapshot_raw, scenario=reference.raw)
+        store.save_run(result, snapshot=reference_snapshot.raw, scenario=reference.raw)
+        store.save_run(result, snapshot=reference_snapshot.raw, scenario=reference.raw)
         self.assertEqual(store.get_run(str(result["run_id"])), result)
         self.assertTrue(store.ready())
 
