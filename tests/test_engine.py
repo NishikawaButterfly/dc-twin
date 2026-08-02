@@ -111,6 +111,67 @@ class ReferenceEngineTests(unittest.TestCase):
             simulate(snapshot, scenario)
 
 
+class SinglePathReferenceEngineTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.snapshot = parse_snapshot(reference_snapshot_data("reference-n.snapshot.json"))
+
+    def test_utility_loss_matches_independent_calculation(self) -> None:
+        scenario = parse_scenario(
+            reference_scenario_data("n-utility-loss.scenario.json"), self.snapshot
+        )
+        result = simulate(self.snapshot, scenario)
+        metrics = result["metrics"]
+        assert isinstance(metrics, dict)
+        self.assertEqual(metrics["demanded_energy_mj"], 600_000_000_000)
+        self.assertEqual(metrics["served_energy_mj"], 480_000_000_000)
+        self.assertEqual(metrics["unserved_energy_mj"], 120_000_000_000)
+        self.assertEqual(metrics["service_ratio_ppm"], 800_000)
+        self.assertEqual(metrics["interruption_duration_ms"], 120_000)
+        self.assertEqual(metrics["interruption_count"], 1)
+        self.assertEqual(metrics["modeled_redundancy_state"], "no_path")
+        timeline = result["timeline"]
+        assert isinstance(timeline, list)
+        outage = [segment for segment in timeline if segment["unserved_w"] > 0]
+        self.assertEqual(outage[0]["start_ms"], 300_000)
+        self.assertEqual(outage[-1]["end_ms"], 420_000)
+        self.assertEqual(timeline[-1]["battery_energy_mj"]["ups-n"], 0)
+        alarms = result["alarms"]
+        assert isinstance(alarms, list)
+        alarm_times = {(alarm["code"], alarm["time_ms"]) for alarm in alarms}
+        self.assertIn(("ups_low_energy", 264_000), alarm_times)
+        self.assertIn(("ups_energy_depleted", 300_000), alarm_times)
+        self.assertIn(("load_unserved", 300_000), alarm_times)
+
+
+class ReserveUpsReferenceEngineTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.snapshot = parse_snapshot(reference_snapshot_data("reference-n-plus-1.snapshot.json"))
+
+    def test_absorbed_ups_failure_matches_independent_calculation(self) -> None:
+        scenario = parse_scenario(
+            reference_scenario_data("n-plus-1-ups-failure.scenario.json"), self.snapshot
+        )
+        result = simulate(self.snapshot, scenario)
+        metrics = result["metrics"]
+        assert isinstance(metrics, dict)
+        self.assertEqual(metrics["unserved_energy_mj"], 0)
+        self.assertEqual(metrics["service_ratio_ppm"], 1_000_000)
+        self.assertEqual(metrics["interruption_count"], 0)
+        self.assertEqual(metrics["minimum_served_w"], 1_600_000)
+        self.assertEqual(metrics["modeled_redundancy_state"], "battery_backed")
+        timeline = result["timeline"]
+        assert isinstance(timeline, list)
+        bridge = [
+            segment for segment in timeline if segment["redundancy_state"] == "battery_backed"
+        ]
+        self.assertEqual(bridge[0]["start_ms"], 120_000)
+        self.assertEqual(bridge[-1]["end_ms"], 150_000)
+        final_energy = timeline[-1]["battery_energy_mj"]
+        self.assertEqual(final_energy["ups-r1"], 432_000_000_000)
+        self.assertEqual(final_energy["ups-r2"], 432_000_000_000)
+        self.assertEqual(final_energy["ups-r3"], 408_000_000_000)
+
+
 class GenericEngineTests(unittest.TestCase):
     def test_failure_and_restore_create_one_exact_interruption(self) -> None:
         snapshot = parse_snapshot(minimal_snapshot_data())

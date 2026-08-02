@@ -1,0 +1,26 @@
+{
+  "schema_id": "dc-twin.scenario",
+  "schema_version": "1.0.0",
+  "scenario_id": "REF-DC-N-001",
+  "label": "Utility N loss, UPS ride-through to depletion, and utility restoration",
+  "snapshot_id": "reference-n",
+  "horizon_ms": 600000,
+  "resolution_ms": 1000,
+  "data_classification": "synthetic",
+  "events": [
+    {
+      "id": "event-001-utility-n-failure",
+      "time_ms": 120000,
+      "kind": "component_failure",
+      "component_id": "utility-n",
+      "status": "failed"
+    },
+    {
+      "id": "event-002-utility-n-restore",
+      "time_ms": 420000,
+      "kind": "component_restore",
+      "component_id": "utility-n",
+      "status": "available"
+    }
+  ]
+}

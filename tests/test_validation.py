@@ -18,6 +18,17 @@ class SnapshotValidationTests(unittest.TestCase):
         self.assertEqual(snapshot.component_by_id["ups-a"].usable_energy_mj, 432_000_000_000)
         self.assertIs(snapshot.component_by_id["it-load-1"].kind, ComponentKind.LOAD)
 
+    def test_additional_reference_snapshots_are_strict_and_typed(self) -> None:
+        single = parse_snapshot(reference_snapshot_data("reference-n.snapshot.json"))
+        self.assertEqual(single.snapshot_id, "reference-n")
+        self.assertEqual(len(single.components), 6)
+        self.assertEqual(single.component_by_id["ups-n"].usable_energy_mj, 180_000_000_000)
+        reserve = parse_snapshot(reference_snapshot_data("reference-n-plus-1.snapshot.json"))
+        self.assertEqual(reserve.snapshot_id, "reference-n-plus-1")
+        self.assertEqual(len(reserve.components), 9)
+        self.assertEqual(reserve.component_by_id["ups-r3"].usable_energy_mj, 432_000_000_000)
+        self.assertIs(reserve.component_by_id["ups-r3"].kind, ComponentKind.UPS)
+
     def test_unknown_fields_units_and_boolean_integers_are_rejected(self) -> None:
         cases = []
         unknown = minimal_snapshot_data()

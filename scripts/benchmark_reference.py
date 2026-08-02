@@ -15,11 +15,12 @@ from dc_twin.reference import ReferenceCatalog
 def main() -> int:
     catalog = ReferenceCatalog.load()
     reference = catalog.scenarios["REF-DC-2N-001"]
+    snapshot = catalog.snapshot_for(reference.scenario).snapshot
     durations_ms: list[float] = []
     hashes: set[str] = set()
     for _ in range(5):
         started = time.perf_counter_ns()
-        result = simulate(catalog.snapshot, reference.scenario)
+        result = simulate(snapshot, reference.scenario)
         durations_ms.append((time.perf_counter_ns() - started) / 1_000_000)
         hashes.add(str(result["computation_hash"]))
     if len(hashes) != 1:

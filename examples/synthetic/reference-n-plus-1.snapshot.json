@@ -1,0 +1,202 @@
+{
+  "schema_id": "dc-twin.electrical-design-snapshot",
+  "schema_version": "1.0.0",
+  "snapshot_id": "reference-n-plus-1",
+  "design_revision": "1.0.0",
+  "data_classification": "synthetic",
+  "provenance": {
+    "title": "Synthetic N+1 reference topology",
+    "created_by": "NishikawaButterfly",
+    "method": "Purpose-built fictional topology for deterministic software verification; no operational, customer, or site data was used."
+  },
+  "units": {
+    "power": "W",
+    "energy": "mJ",
+    "time": "ms"
+  },
+  "assumptions": [
+    "The model allocates lossless active-power capacity only.",
+    "Voltage, frequency, phase, reactive power, harmonics, inrush, and conversion efficiency are outside scope.",
+    "Connection state changes are scenario inputs and do not issue commands to equipment.",
+    "Each UPS has 120 kWh of initially available modeled energy and no recharge behavior.",
+    "Any two of the three 800 kW UPS units carry the full 1.6 MW demand.",
+    "UPS R1 and UPS R2 normally carry 800 kW each; reserve UPS R3 keeps both of its connections open until a scenario closes them.",
+    "The two fictional 800 kW loads are single-corded and share one distribution path.",
+    "Equal-timestamp events execute by documented semantic safety priority and then event ID."
+  ],
+  "components": [
+    {
+      "id": "utility-r",
+      "label": "Synthetic utility source R",
+      "kind": "utility",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "switchgear-r-in",
+      "label": "Synthetic input switchgear R",
+      "kind": "switchgear",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "ups-r1",
+      "label": "Synthetic UPS R1",
+      "kind": "ups",
+      "path": "A",
+      "capacity_w": 800000,
+      "initial_status": "available",
+      "usable_energy_mj": 432000000000,
+      "low_energy_threshold_pct": 20
+    },
+    {
+      "id": "ups-r2",
+      "label": "Synthetic UPS R2",
+      "kind": "ups",
+      "path": "A",
+      "capacity_w": 800000,
+      "initial_status": "available",
+      "usable_energy_mj": 432000000000,
+      "low_energy_threshold_pct": 20
+    },
+    {
+      "id": "ups-r3",
+      "label": "Synthetic reserve UPS R3",
+      "kind": "ups",
+      "path": "A",
+      "capacity_w": 800000,
+      "initial_status": "available",
+      "usable_energy_mj": 432000000000,
+      "low_energy_threshold_pct": 20
+    },
+    {
+      "id": "switchgear-r-out",
+      "label": "Synthetic output switchgear R",
+      "kind": "switchgear",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "pdu-r",
+      "label": "Synthetic PDU R",
+      "kind": "pdu",
+      "path": "A",
+      "capacity_w": 2000000,
+      "initial_status": "available"
+    },
+    {
+      "id": "it-load-r1",
+      "label": "Synthetic single-cord IT load R1",
+      "kind": "load",
+      "path": "shared",
+      "capacity_w": 800000,
+      "initial_status": "available",
+      "demand_w": 800000,
+      "priority": 1,
+      "service_order": 1
+    },
+    {
+      "id": "it-load-r2",
+      "label": "Synthetic single-cord IT load R2",
+      "kind": "load",
+      "path": "shared",
+      "capacity_w": 800000,
+      "initial_status": "available",
+      "demand_w": 800000,
+      "priority": 1,
+      "service_order": 2
+    }
+  ],
+  "connections": [
+    {
+      "id": "utility-r-to-switchgear-r-in",
+      "from_component": "utility-r",
+      "to_component": "switchgear-r-in",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "switchgear-r-in-to-ups-r1",
+      "from_component": "switchgear-r-in",
+      "to_component": "ups-r1",
+      "capacity_w": 800000,
+      "initial_closed": true
+    },
+    {
+      "id": "switchgear-r-in-to-ups-r2",
+      "from_component": "switchgear-r-in",
+      "to_component": "ups-r2",
+      "capacity_w": 800000,
+      "initial_closed": true
+    },
+    {
+      "id": "switchgear-r-in-to-ups-r3",
+      "from_component": "switchgear-r-in",
+      "to_component": "ups-r3",
+      "capacity_w": 800000,
+      "initial_closed": false
+    },
+    {
+      "id": "ups-r1-to-switchgear-r-out",
+      "from_component": "ups-r1",
+      "to_component": "switchgear-r-out",
+      "capacity_w": 800000,
+      "initial_closed": true
+    },
+    {
+      "id": "ups-r2-to-switchgear-r-out",
+      "from_component": "ups-r2",
+      "to_component": "switchgear-r-out",
+      "capacity_w": 800000,
+      "initial_closed": true
+    },
+    {
+      "id": "ups-r3-to-switchgear-r-out",
+      "from_component": "ups-r3",
+      "to_component": "switchgear-r-out",
+      "capacity_w": 800000,
+      "initial_closed": false
+    },
+    {
+      "id": "switchgear-r-out-to-pdu-r",
+      "from_component": "switchgear-r-out",
+      "to_component": "pdu-r",
+      "capacity_w": 2000000,
+      "initial_closed": true
+    },
+    {
+      "id": "pdu-r-to-it-load-r1",
+      "from_component": "pdu-r",
+      "to_component": "it-load-r1",
+      "capacity_w": 800000,
+      "initial_closed": true
+    },
+    {
+      "id": "pdu-r-to-it-load-r2",
+      "from_component": "pdu-r",
+      "to_component": "it-load-r2",
+      "capacity_w": 800000,
+      "initial_closed": true
+    }
+  ],
+  "redundancy_groups": [
+    {
+      "id": "source-single-r",
+      "mode": "N",
+      "members": ["utility-r"]
+    },
+    {
+      "id": "ups-n-plus-1",
+      "mode": "N_PLUS_1",
+      "members": ["ups-r1", "ups-r2", "ups-r3"]
+    },
+    {
+      "id": "distribution-single-r",
+      "mode": "N",
+      "members": ["pdu-r"]
+    }
+  ]
+}

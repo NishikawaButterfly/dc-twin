@@ -12,8 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples" / "synthetic"
 
 
-def reference_snapshot_data() -> dict[str, Any]:
-    value = load_path_strict(EXAMPLES / "reference-2n.snapshot.json")
+def reference_snapshot_data(filename: str = "reference-2n.snapshot.json") -> dict[str, Any]:
+    value = load_path_strict(EXAMPLES / filename)
     assert isinstance(value, dict)
     return copy.deepcopy(value)
 

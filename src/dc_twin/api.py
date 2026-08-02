@@ -180,10 +180,11 @@ def run_reference_scenario(scenario_id: str, request: Request) -> dict[str, Any]
             detail=f"No allowlisted synthetic scenario is named {scenario_id!r}.",
             error_code="reference.scenario_not_found",
         )
-    result = simulate(catalog.snapshot, reference.scenario)
+    reference_snapshot = catalog.snapshot_for(reference.scenario)
+    result = simulate(reference_snapshot.snapshot, reference.scenario)
     _store(request).save_run(
         result,
-        snapshot=catalog.snapshot_raw,
+        snapshot=reference_snapshot.raw,
         scenario=reference.raw,
     )
     return result
@@ -234,7 +235,7 @@ def replay_run(run_id: str, request: Request) -> dict[str, Any] | JSONResponse:
             error_code="replay.input_unavailable",
         )
     verification = verify_replay(
-        catalog.snapshot,
+        catalog.snapshot_for(reference.scenario).snapshot,
         reference.scenario,
         str(existing["computation_hash"]),
     )

@@ -29,7 +29,8 @@ def main() -> int:
             failures.append(f"Missing scenario fixture: {scenario_id}")
             continue
         reference = catalog.scenarios[scenario_id]
-        result = simulate(catalog.snapshot, reference.scenario)
+        snapshot = catalog.snapshot_for(reference.scenario).snapshot
+        result = simulate(snapshot, reference.scenario)
         expected_metrics = expected["metrics"]
         actual_metrics = result["metrics"]
         for key, expected_value_for_key in expected_metrics.items():
@@ -38,12 +39,15 @@ def main() -> int:
                     f"{scenario_id}.{key}: expected {expected_value_for_key!r}, "
                     f"received {actual_metrics.get(key)!r}"
                 )
-        initial_ups_energy = catalog.snapshot.component_by_id["ups-a"].usable_energy_mj or 0
-        final_ups_energy = result["timeline"][-1]["battery_energy_mj"]["ups-a"]
-        actual_discharge = initial_ups_energy - final_ups_energy
-        if actual_discharge != expected["ups_a_discharge_mj"]:
+        final_battery_energy = result["timeline"][-1]["battery_energy_mj"]
+        actual_discharge = {
+            ups_id: (snapshot.component_by_id[ups_id].usable_energy_mj or 0)
+            - final_battery_energy[ups_id]
+            for ups_id in sorted(expected["ups_discharge_mj"])
+        }
+        if actual_discharge != expected["ups_discharge_mj"]:
             failures.append(
-                f"{scenario_id}.ups_a_discharge_mj: expected {expected['ups_a_discharge_mj']}, "
+                f"{scenario_id}.ups_discharge_mj: expected {expected['ups_discharge_mj']}, "
                 f"received {actual_discharge}"
             )
         if "outage_start_ms" in expected:
@@ -67,7 +71,7 @@ def main() -> int:
         evidence[scenario_id] = {
             "computation_hash": result["computation_hash"],
             "metrics": actual_metrics,
-            "ups_a_discharge_mj": actual_discharge,
+            "ups_discharge_mj": actual_discharge,
         }
     if failures:
         sys.stderr.write("Reference reconciliation failed:\n- " + "\n- ".join(failures) + "\n")

@@ -55,6 +55,24 @@ Response: `200 OK`
       "horizon_ms": 600000,
       "event_count": 0,
       "data_classification": "synthetic"
+    },
+    {
+      "scenario_id": "REF-DC-N-001",
+      "label": "Utility N loss, UPS ride-through to depletion, and utility restoration",
+      "description": "Single-path utility loss, UPS ride-through to depletion, and utility restoration.",
+      "modeled_redundancy": "event_dependent",
+      "horizon_ms": 600000,
+      "event_count": 2,
+      "data_classification": "synthetic"
+    },
+    {
+      "scenario_id": "REF-DC-NP1-001",
+      "label": "UPS R2 failure with immediate reserve pickup and delayed reserve input closure",
+      "description": "Single UPS failure absorbed by the reserve UPS with a bounded battery bridge.",
+      "modeled_redundancy": "event_dependent",
+      "horizon_ms": 600000,
+      "event_count": 3,
+      "data_classification": "synthetic"
     }
   ]
 }

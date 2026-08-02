@@ -9,7 +9,7 @@ I work around data-center electrical systems, and I wanted a way to reason about
 To be clear about scope: this is not AC power flow, a short-circuit or protection-coordination study, a safety analysis, a Tier assessment, or a live operational twin. It simulates lossless active power against capacity constraints, and nothing else.
 
 [**Open the live explorer**](https://dc-twin.fly.dev/) - a small public
-instance with the three synthetic reference scenarios. Runs live in memory
+instance with the five synthetic reference scenarios. Runs live in memory
 and disappear when the machine stops itself.
 
 ![Web explorer after running the composite reference scenario](assets/screenshots/web-explorer.png)
@@ -91,7 +91,7 @@ All public data is synthetic. The repository contains no customer topology, site
 
 - [Architecture](docs/ARCHITECTURE.md) and the [architecture decision records](adr/)
 - [Model specification](docs/MODEL_SPECIFICATION.md)
-- [Reference scenario](docs/REFERENCE_SCENARIO.md)
+- [Reference scenario](docs/REFERENCE_SCENARIO.md) and [Reference topologies](docs/REFERENCE_TOPOLOGIES.md)
 - [API](docs/API.md), [Operations](docs/OPERATIONS.md), [Test matrix](docs/TEST_MATRIX.md)
 - [Threat model](docs/THREAT_MODEL.md) and [Data provenance](docs/DATA_PROVENANCE.md)
 - [Roadmap](ROADMAP.md) and [Changelog](CHANGELOG.md)
