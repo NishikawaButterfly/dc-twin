@@ -4,9 +4,22 @@ All notable changes are documented here. This project follows [Semantic Versioni
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-02
+
 ### Added
 
 - Synthetic N and N+1 reference topologies, each with one hand-calculated scenario: a single-path utility loss with UPS ride-through to depletion, and an absorbed single-UPS failure with a bounded reserve battery bridge.
+- A side-by-side scenario comparison in the web explorer, with a merged milestone table showing where two runs diverge.
+- A plain-language explainer for readers without an electrical background.
+- A public demo of the reference explorer.
+
+### Changed
+
+- The project presents itself as a deterministic reference simulator; the explorer and API titles match.
+
+### Fixed
+
+- Web assets are served with explicit media types, so the explorer also works on hosts whose registry maps .js to text/plain.
 
 ## [0.1.0] - 2026-08-01
 
