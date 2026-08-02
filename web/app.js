@@ -222,10 +222,20 @@ function safeFilename(value, fallback) {
   return safe || fallback;
 }
 
+const ENUM_DISPLAY_OVERRIDES = {
+  two_n: "2N",
+  n_plus_one: "N+1",
+  n: "N",
+};
+
 function formatEnumLabel(value, fallback = "Not reported") {
   const text = asText(value);
   if (!text) {
     return fallback;
+  }
+  const override = ENUM_DISPLAY_OVERRIDES[text.toLowerCase()];
+  if (override) {
+    return override;
   }
   const spaced = text.replace(/[_-]+/g, " ").replace(/\s+/g, " ");
   return `${spaced.charAt(0).toUpperCase()}${spaced.slice(1)}`;
