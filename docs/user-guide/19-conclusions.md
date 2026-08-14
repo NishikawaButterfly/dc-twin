@@ -60,7 +60,7 @@ horizon, a 1 MW dual-cord load, PDU B in maintenance from 30,000 ms to
 > available with 1.2 MW that the model could not route to the load, reported as
 > 1,000,000 W of stranded capacity. The identical utility failure with no
 > maintenance window in progress produced no unserved energy at all
-> (`GUIDE-2N-FEED-LOSS`, computation hash `0ca87f32…`).
+> (`GUIDE-2N-FEED-LOSS`, computation hash `72e2cb54…`).
 >
 > The exposure is therefore governed by the relationship between the battery
 > autonomy and the maintenance window duration, both of which are inputs.
@@ -124,7 +124,8 @@ never restored.
 | Service ratio | 1,000,000 ppm (100%) |
 | Interruption duration | 0 ms |
 | Worst modeled state | `single_path` |
-| Alarms | 3, of which 2 critical |
+| Alarms | 1, critical |
+| UPS A discharge | 0 mJ |
 
 ### Unsound
 
@@ -133,23 +134,29 @@ never restored.
 ### Sound
 
 > In this model the load remained fully served for the entire horizon after
-> utility A failed. However, the allocation drew the full 1 MW from UPS A's
-> battery rather than from the available utility B feed, discharging it from
-> 108,000,000,000 mJ to zero between 60,000 ms and 168,000 ms and raising
-> `ups_low_energy` at 141,000 ms and `ups_energy_depleted` at 168,000 ms.
-> Utility B delivered 0 W throughout that period and picked the load up only
-> after the battery was exhausted.
->
-> This is a modelling artefact of the max-flow allocation preferring the
-> shortest path from source to load, not a prediction of how a real dual-cord
-> load would draw. It does mean the run should not be cited as evidence that
-> the battery was preserved.
+> utility A failed, with utility B delivering the whole 1,000,000 W. UPS A was
+> islanded from 60,000 ms and eligible to discharge; it delivered 0 W, and both
+> UPS units finish the run at their full 108,000,000,000 mJ. From 60,000 ms the
+> run reports `single_path`: exactly one non-battery source path could carry the
+> demand alone.
 
-The 100% service ratio and the 0 mJ unserved energy are both true. Reading only
-those two numbers, you would file this run as a clean pass and miss that a
-battery you were counting on emptied itself. The two critical alarms are the
-only thing in the output that points at it, and chapter 12 shows that alarms
-are just as capable of pointing at nothing.
+Why the unsound version fails, when every metric in it is true:
+
+- **"no impact" is contradicted by the state.** The run's own evidence says the
+  design went from two qualifying paths to one. The next utility failure has
+  nothing behind it but 108 seconds of battery. A run that ends at 100% is not a
+  run that ended where it started.
+- **The allocation is feasibility, not prediction.** Utility B carrying 100% of
+  the load is one feasible answer among many; a real dual-cord load would draw
+  from both cords. Chapter 11 is explicit that these are not predicted currents.
+- **One scenario is not a property of the design.** The failure time, the
+  horizon and the absence of any second failure are all things the author chose.
+
+The battery figure is worth stating explicitly whenever you quote a run like
+this, because "the battery was preserved" is a genuine finding and it is
+invisible in every headline metric. It is in `battery_energy_mj` at the last
+segment, and in `source_power_w`, where `ups-a` appears at `0 W` for every
+segment after the feed loss: eligible, and not called on.
 
 ## Conclusions you may draw
 
@@ -265,7 +272,7 @@ you typed.
 A short checklist. It takes two minutes and it is the difference between an
 analysis and a liability.
 
-1. **Did I check `unserved_energy_mj` before the alarm list?** An empty alarm
+1. **Did I check `unserved_energy_mj` before the alarm list?** A short alarm
    list means nothing on its own.
 2. **Is the horizon long enough that the situation resolved?** If the run ended
    mid-outage, the unserved figure is a floor set by where I stopped the clock.
@@ -273,8 +280,9 @@ analysis and a liability.
    one deliberate difference?** If not, the comparison is not one.
 4. **Did I check the snapshot hashes of both results?** `dc-twin compare` will
    not tell me they came from different topologies.
-5. **Does any `battery_backed` or `single_path` window hide a battery that was
-   actually carrying the load?** Check `source_power_w` for `ups-*` keys.
+5. **Did any battery actually carry load, and for how long?** Check
+   `source_power_w` for `ups-*` keys with a *positive* value; a key at `0 W`
+   means the unit was eligible and never called on.
 6. **Have I stated the horizon, the scenario ID, the snapshot hash and the
    computation hash alongside the number?**
 7. **Does my sentence contain the words "availability", "Tier", "uptime",

@@ -16,14 +16,24 @@ integral maximum-flow calculation and allocates as much of that load's current
 demand as the remaining network capacity permits. Capacity consumed by an
 earlier load is deducted before the next load is considered.
 
-Three properties follow, and all three matter:
+That pass runs twice, because sources fall into two classes. The **live**
+class is available utilities and running generators; the **stored** class is
+the qualifying battery UPS units of chapter 6. The first pass offers every load
+the live sources only — there is no battery edge in that network at all — and
+the second pass runs only if something is still short, adding the battery edges
+against the capacity the first pass left.
+
+Four properties follow, and all four matter:
 
 1. **It is sequential, not simultaneous.** The first load takes what it needs
    before the second is considered at all.
 2. **It is not proportional.** There is no fair-share, no load shedding
    percentage, and no partial derating across loads. A lower-priority load is
    starved completely before a higher-priority load gives up a single watt.
-3. **It is not an optimisation.** This is not economic dispatch, not optimal
+3. **Stored energy is a last resort.** No battery discharges while a live
+   source can still reach any load, whatever the shape of the graph. A battery
+   supplies exactly the demand no live source can reach.
+4. **It is not an optimisation.** This is not economic dispatch, not optimal
    power flow, and not a prediction of how protective devices would behave. It
    is a deterministic, auditable rule chosen because it can be checked by hand.
 

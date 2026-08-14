@@ -79,9 +79,22 @@ For each interval, unavailable components and open connections are excluded. Com
 
 Loads are considered in ascending `(priority, service_order, component_id)` order. For each load, an integral maximum-flow calculation allocates as much of its current demand as possible from the remaining network capacity. Source IDs and adjacency lists are sorted before traversal so an otherwise equivalent graph does not depend on dictionary, file-system, or database order.
 
-This sequential policy is deliberate and auditable. It is not an economic dispatch, optimal power flow, proportional fairness algorithm, or prediction of protective-device behavior.
+### 4.2 Source classes and the two-stage allocation
 
-### 4.2 Interval boundaries
+Sources belong to two classes. **Live** sources are the eligible non-battery sources of section 3.2: available utilities and running generators. **Stored** sources are the eligible battery sources of section 3.2: available UPS units with positive stored energy that no live source can energize upstream.
+
+Stored energy is a last resort. Each interval is therefore allocated in two stages:
+
+1. **Live stage.** Every load, in `(priority, service_order, component_id)` order, is allocated from the live sources alone. No battery edge exists in this network.
+2. **Stored stage.** If at least one stored source is eligible and at least one load is still short, the same loads are considered again in the same order, against the capacity the live stage left, on the same network with the battery edges added.
+
+The stages are ordered, and both are deterministic, so the result is reproducible. Because the live stage completes for every load before any battery edge exists, a UPS must not discharge while a live source can still reach any load, whatever the relative graph distances. A battery therefore supplies exactly the demand that no live source can reach, and no more.
+
+Both stages report every eligible source. A source that was offered to the allocation and delivered nothing appears in `source_power_w` with a value of `0 W`, including in intervals where total demand is zero. Presence in that map means eligible, not supplying.
+
+This sequential, staged policy is deliberate and auditable. It is not an economic dispatch, optimal power flow, proportional fairness algorithm, or prediction of protective-device behavior. In particular, the model does not represent a real UPS's electrical behavior on loss of its own input: it decides which modeled source class serves a load, not how a static-switch or double-conversion topology would transfer.
+
+### 4.3 Interval boundaries
 
 The simulation evaluates scheduled event times, requested resolution boundaries, the scenario horizon, and internally derived UPS low-energy and depletion times. A derived battery transition splits an interval at the exact integer millisecond boundary so that energy debit, alarms, and service changes remain traceable.
 

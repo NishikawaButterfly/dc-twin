@@ -15,7 +15,7 @@ Normative values are integer watts, millijoules, milliseconds, and parts per mil
 | Scenario contract | Unit and schema tests | Every event kind; status-kind agreement; atomic open/close; load step; horizon and resolution bounds; unknown fields |
 | Topology | Unit tests | Broken references; self-edge; directed cycle; nonterminal load; initially paralleled ATS/STS; invalid redundancy member |
 | Event semantics | Unit tests | Stable priority; ID tie-break; contradictory same-target event; unknown target; wrong target kind; transfer overlap; load above rating |
-| Capacity allocator | Unit tests | Node and edge limits; multiple sources; bottleneck; unreachable load; stable adjacency/source order; priority and service-order allocation |
+| Capacity allocator | Unit tests | Node and edge limits; multiple sources; bottleneck; unreachable load; stable adjacency/source order; priority and service-order allocation; live sources before stored energy, including a feed loss with a battery closer to the load |
 | UPS model | Unit tests | Pass-through; battery source eligibility; exact debit; low threshold; exact depletion split; no negative energy; no modeled recharge |
 | Timeline | Unit tests | Half-open contiguous segments; event and resolution boundaries; causal IDs; state hashes; conservation invariants |
 | Alarms | Unit tests | Raise and clear per code; deduplicated re-raise; service alarm at time zero for a run that begins under-served, and its later clear |

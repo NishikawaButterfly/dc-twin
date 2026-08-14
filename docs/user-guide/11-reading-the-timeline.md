@@ -117,8 +117,13 @@ value of zero.** In the segment above, `utility-b` is listed at 0 W: it was
 available and eligible, and delivered nothing because it could not reach the
 load. A source's presence in this map means "eligible", not "supplying".
 
-This map is also where you see which UPS units are acting as batteries. If a
-`ups-*` key appears in `source_power_w`, that unit is discharging.
+This map is also where you see which UPS units are acting as batteries — but
+read the value, not the key. A `ups-*` key with a positive value is a unit
+discharging. A `ups-*` key at `0 W` is a unit that was islanded from its own
+upstream feed, was therefore eligible to discharge, and was not called on
+because a live source could reach the load. Stored energy is the last source
+class the allocation reaches for, so that second case is the common one on a
+redundant topology.
 
 ### `connection_flow_w`
 

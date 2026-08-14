@@ -22,7 +22,7 @@ dc-twin compare results/n.json results/2n.json
 ```
 
 ```json
-{"left_run_id": "run-97219503d3fb95ea", "right_run_id": "run-0ca87f32ca8385a8", "same_computation": false, "metric_differences": {"interruption_count": {"left": 1, "right": 0}, "interruption_duration_ms": {"left": 432000, "right": 0}, "minimum_served_w": {"left": 0, "right": 1000000}, "modeled_redundancy_state": {"left": "no_path", "right": "single_path"}, "served_energy_mj": {"left": 168000000000, "right": 600000000000}, "service_ratio_ppm": {"left": 280000, "right": 1000000}, "unserved_energy_mj": {"left": 432000000000, "right": 0}}}
+{"left_run_id": "run-97219503d3fb95ea", "right_run_id": "run-72e2cb542c7489b9", "same_computation": false, "metric_differences": {"interruption_count": {"left": 1, "right": 0}, "interruption_duration_ms": {"left": 432000, "right": 0}, "minimum_served_w": {"left": 0, "right": 1000000}, "modeled_redundancy_state": {"left": "no_path", "right": "single_path"}, "served_energy_mj": {"left": 168000000000, "right": 600000000000}, "service_ratio_ppm": {"left": 280000, "right": 1000000}, "unserved_energy_mj": {"left": 432000000000, "right": 0}}}
 ```
 
 It reports two things: whether the computation hashes match, and every metric
@@ -69,8 +69,8 @@ were actually distinguished:
 
 | Resolution | Timeline segments | Telemetry points |
 |---:|---:|---:|
-| 1,000 ms | 600 | 4,968 |
-| 2,000 ms | 301 | 2,493 |
+| 1,000 ms | 600 | 5,400 |
+| 2,000 ms | 300 | 2,700 |
 
 ## The web explorer: *Compare runs*
 
@@ -185,7 +185,7 @@ python -c "import json,sys; f=lambda p:{(a['time_ms'],a['code'],a['component_id'
 
 ```text
 only in A: []
-only in B: [(30000, 'maintenance_active', 'pdu-b'), (168000, 'load_unserved', None)]
+only in B: [(30000, 'maintenance_active', 'pdu-b'), (141000, 'ups_low_energy', 'ups-a'), (168000, 'load_unserved', None), (168000, 'ups_energy_depleted', 'ups-a')]
 ```
 
 ### Which load lost service?

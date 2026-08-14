@@ -4,9 +4,14 @@ All notable changes are documented here. This project follows [Semantic Versioni
 
 ## [Unreleased]
 
+### Changed
+
+- The capacity allocation now treats sources as two classes and solves each interval in two stages: every load from the live sources (available utilities and running generators) first, then, only for demand still short, the same loads with the battery edges added. A UPS therefore never discharges while a live source can reach the load, and supplies exactly the demand no live source can reach. Both stages remain deterministic, so results stay reproducible. Every eligible source is now reported in `source_power_w`, including at `0 W` and including in intervals with zero demand.
+
 ### Fixed
 
 - A scenario whose first solved state is already under-served now raises `load_unserved` at `0 ms` against the `system.initialized` transition, with the same code and severity as a later raise, and clears normally when service returns. Such runs previously reported an empty alarm list for the whole horizon. No bundled reference scenario begins under-served, so every published reference hash is unchanged.
+- A battery is no longer drained in preference to a live utility feed that could reach the load. The previous single-pass allocation pooled both source classes and took the shortest augmenting path, so on a healthy 2N topology the loss of feed A discharged UPS A to empty while utility B delivered 0 W. All five bundled reference results, including their computation hashes, are byte-identical; the worked examples in `docs/user-guide/` that demonstrated the defect were re-baselined.
 
 ## [0.2.0] - 2026-08-02
 

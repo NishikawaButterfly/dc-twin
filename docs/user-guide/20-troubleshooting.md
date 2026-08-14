@@ -345,10 +345,13 @@ reports `supported` in every segment, check the `path` tags. Only `A` and `B`
 count toward a qualifying source path, and retagging a working 2N topology to
 `shared` demotes it silently and forever.
 
-**A battery draining on a healthy topology.** If a UPS depletes in a run whose
-service ratio is 100%, the allocation preferred the battery over a live feed
-because it sat closer to the load. Check `source_power_w` for `ups-*` keys in
-segments where you expected utility supply. Chapter 5 explains the mechanism.
+**A battery draining while the service ratio stays at 100%.** This is not a
+solver preference — stored energy is the last source class the allocation
+reaches for, so a UPS only discharges when no live source can reach the load.
+It means the live path you were counting on is not reaching that load in the
+model: a component unavailable, a connection open, or a rating too small. Read
+`source_power_w` for `ups-*` keys with a positive value, then work upstream
+from that UPS to find what is missing. Chapters 5 and 18 work through it.
 
 ---
 

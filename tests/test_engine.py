@@ -72,6 +72,50 @@ class ReferenceEngineTests(unittest.TestCase):
         self.assertEqual(metrics["unserved_energy_mj"], 0)
         self.assertEqual(timeline[-1]["battery_energy_mj"]["ups-a"], 408_000_000_000)
 
+    def test_feed_loss_never_discharges_a_battery_a_utility_can_reach(self) -> None:
+        data = reference_scenario_data("healthy.scenario.json")
+        data["scenario_id"] = "GUIDE-2N-FEED-LOSS-BOTH-CORDS"
+        data["label"] = "Utility A loss while both cords of both PDUs are closed"
+        data["events"] = [
+            {
+                "id": "event-001-close-transfer-cords",
+                "time_ms": 0,
+                "kind": "atomic_transfer",
+                "open_connection_ids": [],
+                "close_connection_ids": [
+                    "pdu-a-to-load-1-transfer",
+                    "pdu-a-to-load-2-transfer",
+                    "pdu-b-to-load-1-transfer",
+                    "pdu-b-to-load-2-transfer",
+                ],
+            },
+            {
+                "id": "event-002-utility-a-failure",
+                "time_ms": 60_000,
+                "kind": "component_failure",
+                "component_id": "utility-a",
+                "status": "failed",
+            },
+        ]
+        scenario = parse_scenario(data, self.snapshot)
+        result = simulate(self.snapshot, scenario)
+        metrics = result["metrics"]
+        timeline = result["timeline"]
+        alarms = result["alarms"]
+        assert isinstance(metrics, dict)
+        assert isinstance(timeline, list)
+        assert isinstance(alarms, list)
+        self.assertEqual(metrics["unserved_energy_mj"], 0)
+        self.assertEqual(metrics["service_ratio_ppm"], 1_000_000)
+        self.assertEqual(
+            timeline[-1]["battery_energy_mj"], {"ups-a": 432_000_000_000, "ups-b": 432_000_000_000}
+        )
+        after_loss = [segment for segment in timeline if segment["start_ms"] >= 60_000]
+        for segment in after_loss:
+            self.assertEqual(segment["source_power_w"].get("ups-a", 0), 0)
+            self.assertEqual(segment["source_power_w"]["utility-b"], 1_600_000)
+        self.assertEqual([alarm["code"] for alarm in alarms], ["component_failed"])
+
     def test_replay_and_semantic_hash_are_stable(self) -> None:
         scenario = parse_scenario(reference_scenario_data("healthy.scenario.json"), self.snapshot)
         first = simulate(self.snapshot, scenario)

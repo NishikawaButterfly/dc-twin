@@ -205,8 +205,10 @@ the model's terms.
 It is not what makes it a 2N arrangement in reality. In reality a dual-cord
 load draws roughly half its power from each cord and the two supplies are
 independent. In this model the solver takes the shortest augmenting path it
-finds and puts as much flow on it as it can. Run any scenario against this
-snapshot and look at the first segment, before any event has fired:
+finds within a source class and puts as much flow on it as it can. Between the
+two live utilities here there is no tie-break beyond that. Run any scenario
+against this snapshot and look at the first segment, before any event has
+fired:
 
 ```text
 --- segment 0-1000  state=two_n

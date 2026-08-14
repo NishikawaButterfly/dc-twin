@@ -34,7 +34,7 @@ The JSON Schemas in `contracts/` define the public snapshot, scenario, and resul
 
 ### Deterministic domain kernel
 
-The domain layer contains immutable input models, a mutable state object scoped to one run, topology validation, canonical hashing, deterministic event processing, and an integral maximum-flow capacity allocator. It has no dependency on HTTP or persistence.
+The domain layer contains immutable input models, a mutable state object scoped to one run, topology validation, canonical hashing, deterministic event processing, and a two-stage integral maximum-flow capacity allocator that reaches for stored battery energy only after live sources. It has no dependency on HTTP or persistence.
 
 Stable ordering, integer base units, explicit tie-breaks, and canonical hashing make replay testable. The kernel does not read wall-clock time, random state, environment-specific locale, or database-generated identifiers when computing semantic results.
 

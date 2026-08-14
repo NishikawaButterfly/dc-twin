@@ -102,7 +102,6 @@ dc-twin run guide-2n.snapshot.json feed-loss-2n.scenario.json --output results/2
 ```text
       0 ms  two_n           served= 1000000 unserved=       0 stranded=       0 battery=-
   60000 ms  single_path     served= 1000000 unserved=       0 stranded=       0 battery=ups-a
- 168000 ms  single_path     served= 1000000 unserved=       0 stranded=       0 battery=-
 ```
 
 | Metric | Value |
@@ -118,6 +117,13 @@ dc-twin run guide-2n.snapshot.json feed-loss-2n.scenario.json --output results/2
 Same event, same demand, same horizon. One design loses 120 kWh and the other
 loses nothing. That is the redundancy, stated in the only terms this model has.
 
+Read the `battery=ups-a` marker on the second line carefully: that column lists
+the UPS units present in `source_power_w`, and presence means *eligible*. From
+60,000 ms UPS A is islanded from its own feed and eligible to discharge, and it
+delivers 0 W throughout, because utility B can reach the load. The redundant
+pair finishes the run with both batteries at their full
+108,000,000,000 mJ.
+
 The CLI will state the difference for you:
 
 ```powershell
@@ -125,40 +131,42 @@ dc-twin compare results/n.json results/2n.json
 ```
 
 ```json
-{"left_run_id": "run-97219503d3fb95ea", "metric_differences": {"interruption_count": {"left": 1, "right": 0}, "interruption_duration_ms": {"left": 432000, "right": 0}, "minimum_served_w": {"left": 0, "right": 1000000}, "modeled_redundancy_state": {"left": "no_path", "right": "single_path"}, "served_energy_mj": {"left": 168000000000, "right": 600000000000}, "service_ratio_ppm": {"left": 280000, "right": 1000000}, "unserved_energy_mj": {"left": 432000000000, "right": 0}}, "right_run_id": "run-0ca87f32ca8385a8", "same_computation": false}
+{"left_run_id": "run-97219503d3fb95ea", "metric_differences": {"interruption_count": {"left": 1, "right": 0}, "interruption_duration_ms": {"left": 432000, "right": 0}, "minimum_served_w": {"left": 0, "right": 1000000}, "modeled_redundancy_state": {"left": "no_path", "right": "single_path"}, "served_energy_mj": {"left": 168000000000, "right": 600000000000}, "service_ratio_ppm": {"left": 280000, "right": 1000000}, "unserved_energy_mj": {"left": 432000000000, "right": 0}}, "right_run_id": "run-72e2cb542c7489b9", "same_computation": false}
 ```
 
 ## Two ways the state misleads
 
 ### The reported state is not where the power came from
 
-Look again at the 2N run between 60,000 ms and 168,000 ms. The state is
-`single_path`, which asserts that one non-battery path could carry the full
-demand alone. True: utility B could. But look at where the power actually went:
+Look again at the 2N run after 60,000 ms. The state is `single_path`, which
+asserts that one non-battery path could carry the full demand alone. True:
+utility B could. But the state says nothing about which source actually did,
+and that is a separate reading:
 
 ```text
 --- segment 100000-101000  state=single_path
-   source_power_w : {"ups-a": 1000000, "utility-b": 0}
-   flows>0        : {"pdu-a-to-load-1": 1000000, "ups-a-to-pdu-a": 1000000}
-   battery@end    : {"ups-a": 67000000000, "ups-b": 108000000000}
+   source_power_w : {"ups-a": 0, "utility-b": 1000000}
+   flows>0        : {"pdu-b-to-load-1": 1000000, "switchgear-b-to-ups-b": 1000000,
+                     "ups-b-to-pdu-b": 1000000, "utility-b-to-switchgear-b": 1000000}
+   battery@end    : {"ups-a": 108000000000, "ups-b": 108000000000}
 ```
 
-Utility B delivered zero watts. UPS A's battery carried the entire load and
-drained to empty at 168,000 ms, raising a low-energy warning at 141,000 ms and
-a critical depletion alarm at 168,000 ms — all while the state read
-`single_path` and the service ratio stayed at 100%.
+Utility B carries the whole load and UPS A, which is islanded and eligible,
+delivers nothing. Note that UPS A still appears in the map at `0 W`: presence
+means eligible, not supplying.
 
-Why? Once utility A fails, UPS A is no longer energised from upstream, so it
-becomes an eligible battery source. Batteries are pooled with utilities in one
-source set with no preference, and the max-flow search takes the shortest
-augmenting path. UPS A sits one component away from the load; utility B sits
-three. The battery wins, every time, until it is empty.
+That is the allocation policy doing what it should. Sources belong to two
+classes, and stored energy is a last resort. Each interval is solved in two
+stages: first every load from the live sources alone — available utilities and
+running generators, with no battery edge in the network at all — and then, only
+for whatever is still short, the same loads again with the battery edges added.
+A battery therefore supplies exactly the demand that no live source can reach.
 
-Two lessons. First, `single_path` does not mean "running on one utility". It
-means "one path could carry this". Second, the model will drain a battery in
-preference to a live utility feed whenever the battery sits closer to the load
-in the graph. Chapter 19 returns to what you may and may not conclude from
-that.
+The `single_path` state and the `source_power_w` map still answer different
+questions, and you need both. `single_path` does not mean "running on one
+utility"; it means "one path could carry this". Which source is carrying it is
+in the map, and how long a battery could keep carrying it is in
+`battery_energy_mj`. Chapter 18 works through reading the three together.
 
 ### The reported state depends on a metadata string
 

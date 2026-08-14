@@ -72,8 +72,10 @@ initial states, redundancy groups, provenance, assumptions.
 computation hash, always. Not accuracy — a wrong input reproduces exactly.
 
 **Eligible source.** An available utility, a running generator, or a qualifying
-battery UPS. All are pooled into one source set with no preference between
-battery and non-battery.
+battery UPS. Sources fall into two classes: live (utilities and running
+generators) and stored (qualifying battery UPS units). Each interval is
+allocated from the live class first and from the stored class only for what is
+left short, so a battery never carries load a live source could reach.
 
 **Engine version.** Reported by `/health/live` and in every result. Hashes are
 only comparable within one version. The runs in this guide are `1.0.0`.

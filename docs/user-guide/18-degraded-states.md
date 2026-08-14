@@ -90,15 +90,27 @@ information you need is in the same timeline:
 67,000,000,000 mJ remaining at 1,000,000 W is 67 seconds. Nothing in the
 metrics tells you that; you compute it from the segment.
 
-There is one further complication, from chapter 5: the state and the actual
-allocation can disagree. In the redundant-pair feed-loss run the state read
-`single_path` while UPS A was in fact carrying the entire load from battery.
-The reported state and the `source_power_w` map are answering different
-questions, and only the second tells you where the power came from.
+There is one further complication: the state and the actual allocation answer
+different questions, and the state can be the weaker of the two. Take the same
+`guide-2n` topology with every `path` tag set to `shared`. Utility A fails,
+utility B carries the whole load, and the run reports:
+
+```text
+--- segment 100000-101000  state=battery_backed
+   source_power_w : {"ups-a": 0, "utility-b": 1000000}
+   battery@end    : {"ups-a": 108000000000, "ups-b": 108000000000}
+```
+
+`battery_backed` with no battery discharging at all. The state is evidence
+about paths, and with no component tagged `A` or `B` no path can qualify, so
+the evidence falls through to the weakest name that fits. The allocation is
+untouched by any of it: utility B is carrying the load and UPS A is listed at
+`0 W` because it is eligible, not because it is supplying.
 
 The reliable test for "is a battery discharging right now" is not the state
-name. It is whether a `ups-*` key appears in `source_power_w` with a positive
-value.
+name. It is whether a `ups-*` key appears in `source_power_w` with a
+**positive** value. A key at `0 W` means the opposite: the unit was eligible
+and the allocation did not need it.
 
 ## `partial_service`: a shortfall, not an outage
 
@@ -172,9 +184,10 @@ part worth getting right, and it comes entirely from events you author.
    that matters and no metric reports it.
 4. **For any `partial_service` window, read `load_service_w`** to find which
    loads were starved. The aggregate figures will not tell you.
-5. **Check `source_power_w` for `ups-*` keys** in every segment, regardless of
-   the reported state. That is the only reliable indicator that a battery is
-   discharging.
+5. **Check `source_power_w` for `ups-*` keys with a positive value** in every
+   segment, regardless of the reported state. That is the only reliable
+   indicator that a battery is discharging; a key at `0 W` reports an eligible
+   unit the allocation did not call on.
 6. **Only then read the run-level `modeled_redundancy_state`**, remembering it
    is the worst state over any non-zero duration and may describe one second of
    a ten-minute run.

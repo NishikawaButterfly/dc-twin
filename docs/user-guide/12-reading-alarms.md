@@ -92,19 +92,27 @@ service never drops below 100%:
 
 ```text
   60000 ms  critical component_failed       utility-a entered the modeled failed state.
- 141000 ms  warning  ups_low_energy         ups-a reached its modeled low-energy threshold.
- 168000 ms  critical ups_energy_depleted    ups-a exhausted its modeled usable battery energy.
 ```
 
-Two critical alarms and a warning. Service ratio: 1,000,000 ppm. Unserved
-energy: 0 mJ. Interruption duration: 0 ms.
+One critical alarm. Service ratio: 1,000,000 ppm. Unserved energy: 0 mJ.
+Interruption duration: 0 ms. Both batteries finish the run full.
 
-The battery genuinely drained to zero — that part is real, and chapter 5
-explains why the solver preferred it over the live utility B. But nothing was
-ever unserved, and `load_unserved` was correctly never raised. If you triage by
-severity you will treat this run as worse than it was; if you triage by
-`load_unserved` alone you will treat it as fine while a battery you were
-counting on has silently emptied.
+The alarm is accurate and the run is genuinely uneventful, which is the trap in
+this direction: `critical` here means "a component you declared failed", not "a
+consequence occurred". Compare it with chapter 6's single-feed run, where the
+same severity on `ups_energy_depleted` precedes a total loss of load. Severity
+is a property of the code, fixed in advance; it is not a measure of what the
+event cost.
+
+The mirror-image trap is a battery discharging while the service ratio stays at
+100%, which is what `REF-DC-2N-GEN-SUCCESS` does: UPS A carries the load for
+15 seconds, the generator picks it up, and the run reports 1,000,000 ppm with
+24,000,000,000 mJ gone from the battery. Nothing in the alarm list scales with
+that. It happens when a battery is the only source that can reach a load — in
+that run PDU B is in maintenance, so utility B has no route. It does not happen
+merely because the battery sits nearer to the load in the graph: stored energy
+is a last resort in the allocation, so a UPS that a live feed could relieve is
+never called on.
 
 Neither reading is complete on its own. Alarms tell you what changed; metrics
 tell you what it cost.
