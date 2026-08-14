@@ -8,6 +8,13 @@ from dc_twin.models import Availability
 from dc_twin.validation import parse_snapshot
 from tests.helpers import minimal_snapshot_data, reference_snapshot_data
 
+_TRANSFER_CORDS = (
+    "pdu-a-to-load-1-transfer",
+    "pdu-a-to-load-2-transfer",
+    "pdu-b-to-load-1-transfer",
+    "pdu-b-to-load-2-transfer",
+)
+
 
 class CapacityAllocationTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -33,6 +40,27 @@ class CapacityAllocationTests(unittest.TestCase):
         self.assertEqual(summary.source_power_w["ups-a"], 800_000)
         self.assertEqual(summary.source_power_w["utility-b"], 800_000)
         self.assertEqual(summary.battery_source_ids, ("ups-a",))
+
+    def test_live_utility_is_preferred_over_an_islanded_battery(self) -> None:
+        state = initial_state(self.snapshot)
+        for connection_id in _TRANSFER_CORDS:
+            state.connection_closed[connection_id] = True
+        state.component_status["utility-a"] = Availability.FAILED
+        summary = solve_capacity(self.snapshot, state)
+        self.assertEqual(summary.served_w, 1_600_000)
+        self.assertEqual(summary.battery_source_ids, ("ups-a",))
+        self.assertEqual(summary.source_power_w["utility-b"], 1_600_000)
+        self.assertEqual(summary.source_power_w.get("ups-a", 0), 0)
+
+    def test_stored_energy_covers_only_what_no_live_source_reaches(self) -> None:
+        state = initial_state(self.snapshot)
+        state.component_status["utility-a"] = Availability.FAILED
+        state.connection_closed["pdu-b-to-load-1-transfer"] = True
+        summary = solve_capacity(self.snapshot, state)
+        self.assertEqual(summary.served_w, 1_600_000)
+        self.assertEqual(summary.source_power_w["utility-b"], 1_200_000)
+        self.assertEqual(summary.source_power_w["ups-a"], 400_000)
+        self.assertEqual(summary.load_service_w, {"it-load-1": 800_000, "it-load-2": 800_000})
 
     def test_open_or_unavailable_path_never_carries_flow(self) -> None:
         state = initial_state(self.snapshot)

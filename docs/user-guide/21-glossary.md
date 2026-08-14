@@ -72,8 +72,10 @@ initial states, redundancy groups, provenance, assumptions.
 computation hash, always. Not accuracy — a wrong input reproduces exactly.
 
 **Eligible source.** An available utility, a running generator, or a qualifying
-battery UPS. All are pooled into one source set with no preference between
-battery and non-battery.
+battery UPS. Sources fall into two classes: live (utilities and running
+generators) and stored (qualifying battery UPS units). Each interval is
+allocated from the live class first and from the stored class only for what is
+left short, so a battery never carries load a live source could reach.
 
 **Engine version.** Reported by `/health/live` and in every result. Hashes are
 only comparable within one version. The runs in this guide are `1.0.0`.
@@ -100,9 +102,11 @@ produces the same reading as a blackout.
 **Load.** A terminal node with `demand_w`, `priority` and `service_order`. Not
 an IT workload; `priority` is a sort key, not a criticality classification.
 
-**`load_unserved`.** A `critical` alarm raised when total unserved power goes
-from zero to positive. **Requires a transition**, so a run that is under-served
-from the first millisecond never raises it.
+**`load_unserved`.** A `critical` alarm raised when total unserved power is
+positive in the run's first solved state, or later goes from zero to positive.
+A run that begins under-served raises it at `0 ms` against
+`system.initialized`. One raise per outage, with no indication of how much or
+for how long.
 
 **Maintenance.** A component availability value. Behaviourally identical to
 `failed` inside the solver; the difference is the alarm code, its `info`

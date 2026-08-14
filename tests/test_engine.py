@@ -15,6 +15,16 @@ from tests.helpers import (
 )
 
 
+def _starved_snapshot_data() -> dict[str, object]:
+    """Return a topology whose only source cannot cover the load from the first instant."""
+
+    data = minimal_snapshot_data()
+    for component in data["components"]:
+        if component["id"] == "source":
+            component["capacity_w"] = 50
+    return data
+
+
 class ReferenceEngineTests(unittest.TestCase):
     def setUp(self) -> None:
         self.snapshot = parse_snapshot(reference_snapshot_data())
@@ -61,6 +71,50 @@ class ReferenceEngineTests(unittest.TestCase):
         assert isinstance(timeline, list)
         self.assertEqual(metrics["unserved_energy_mj"], 0)
         self.assertEqual(timeline[-1]["battery_energy_mj"]["ups-a"], 408_000_000_000)
+
+    def test_feed_loss_never_discharges_a_battery_a_utility_can_reach(self) -> None:
+        data = reference_scenario_data("healthy.scenario.json")
+        data["scenario_id"] = "GUIDE-2N-FEED-LOSS-BOTH-CORDS"
+        data["label"] = "Utility A loss while both cords of both PDUs are closed"
+        data["events"] = [
+            {
+                "id": "event-001-close-transfer-cords",
+                "time_ms": 0,
+                "kind": "atomic_transfer",
+                "open_connection_ids": [],
+                "close_connection_ids": [
+                    "pdu-a-to-load-1-transfer",
+                    "pdu-a-to-load-2-transfer",
+                    "pdu-b-to-load-1-transfer",
+                    "pdu-b-to-load-2-transfer",
+                ],
+            },
+            {
+                "id": "event-002-utility-a-failure",
+                "time_ms": 60_000,
+                "kind": "component_failure",
+                "component_id": "utility-a",
+                "status": "failed",
+            },
+        ]
+        scenario = parse_scenario(data, self.snapshot)
+        result = simulate(self.snapshot, scenario)
+        metrics = result["metrics"]
+        timeline = result["timeline"]
+        alarms = result["alarms"]
+        assert isinstance(metrics, dict)
+        assert isinstance(timeline, list)
+        assert isinstance(alarms, list)
+        self.assertEqual(metrics["unserved_energy_mj"], 0)
+        self.assertEqual(metrics["service_ratio_ppm"], 1_000_000)
+        self.assertEqual(
+            timeline[-1]["battery_energy_mj"], {"ups-a": 432_000_000_000, "ups-b": 432_000_000_000}
+        )
+        after_loss = [segment for segment in timeline if segment["start_ms"] >= 60_000]
+        for segment in after_loss:
+            self.assertEqual(segment["source_power_w"].get("ups-a", 0), 0)
+            self.assertEqual(segment["source_power_w"]["utility-b"], 1_600_000)
+        self.assertEqual([alarm["code"] for alarm in alarms], ["component_failed"])
 
     def test_replay_and_semantic_hash_are_stable(self) -> None:
         scenario = parse_scenario(reference_scenario_data("healthy.scenario.json"), self.snapshot)
@@ -212,6 +266,53 @@ class GenericEngineTests(unittest.TestCase):
         transitions = result["transitions"]
         assert isinstance(transitions, list)
         self.assertEqual([item["time_ms"] for item in transitions], [0, 100, 300, 500])
+
+    def test_run_that_begins_under_served_raises_the_alarm_at_time_zero(self) -> None:
+        snapshot = parse_snapshot(_starved_snapshot_data())
+        scenario = parse_scenario(minimal_scenario_data(), snapshot)
+        result = simulate(snapshot, scenario)
+        timeline = result["timeline"]
+        assert isinstance(timeline, list)
+        self.assertEqual(timeline[0]["served_w"], 50)
+        self.assertEqual(timeline[0]["unserved_w"], 30)
+        alarms = result["alarms"]
+        assert isinstance(alarms, list)
+        self.assertEqual(
+            [(alarm["code"], alarm["severity"], alarm["time_ms"]) for alarm in alarms],
+            [("load_unserved", "critical", 0)],
+        )
+        self.assertEqual(alarms[0]["causal_event_id"], "system.initialized")
+        transitions = result["transitions"]
+        assert isinstance(transitions, list)
+        self.assertEqual(transitions[0]["alarms_raised"], [alarms[0]["id"]])
+
+    def test_alarm_raised_at_time_zero_still_clears_when_service_returns(self) -> None:
+        snapshot = parse_snapshot(_starved_snapshot_data())
+        scenario = parse_scenario(
+            minimal_scenario_data(
+                events=[
+                    {
+                        "id": "shed",
+                        "time_ms": 500,
+                        "kind": "load_step",
+                        "component_id": "load",
+                        "demand_w": 50,
+                    }
+                ]
+            ),
+            snapshot,
+        )
+        result = simulate(snapshot, scenario)
+        alarms = result["alarms"]
+        transitions = result["transitions"]
+        assert isinstance(alarms, list)
+        assert isinstance(transitions, list)
+        self.assertEqual([alarm["code"] for alarm in alarms], ["load_unserved"])
+        self.assertEqual(transitions[0]["alarms_raised"], [alarms[0]["id"]])
+        self.assertEqual(transitions[1]["alarms_cleared"], [alarms[0]["id"]])
+        metrics = result["metrics"]
+        assert isinstance(metrics, dict)
+        self.assertEqual(metrics["interruption_duration_ms"], 500)
 
     def test_input_objects_are_not_mutated(self) -> None:
         snapshot_data = minimal_snapshot_data()

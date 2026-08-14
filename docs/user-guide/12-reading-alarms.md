@@ -13,7 +13,7 @@ are *not* raised.
 | `maintenance_active` | info | a `maintenance_start` event fires | `maintenance_end` on the same component |
 | `ups_low_energy` | warning | a discharging UPS crosses its threshold | never |
 | `ups_energy_depleted` | critical | a discharging UPS reaches zero | never |
-| `load_unserved` | critical | total unserved power goes from zero to positive | when total unserved returns to zero |
+| `load_unserved` | critical | total unserved power is positive in the first solved state, or later goes from zero to positive | when total unserved returns to zero |
 
 That is the complete set. There is no over-capacity alarm, no
 approaching-rating alarm, no redundancy-lost alarm, no transfer alarm, and no
@@ -92,26 +92,34 @@ service never drops below 100%:
 
 ```text
   60000 ms  critical component_failed       utility-a entered the modeled failed state.
- 141000 ms  warning  ups_low_energy         ups-a reached its modeled low-energy threshold.
- 168000 ms  critical ups_energy_depleted    ups-a exhausted its modeled usable battery energy.
 ```
 
-Two critical alarms and a warning. Service ratio: 1,000,000 ppm. Unserved
-energy: 0 mJ. Interruption duration: 0 ms.
+One critical alarm. Service ratio: 1,000,000 ppm. Unserved energy: 0 mJ.
+Interruption duration: 0 ms. Both batteries finish the run full.
 
-The battery genuinely drained to zero — that part is real, and chapter 5
-explains why the solver preferred it over the live utility B. But nothing was
-ever unserved, and `load_unserved` was correctly never raised. If you triage by
-severity you will treat this run as worse than it was; if you triage by
-`load_unserved` alone you will treat it as fine while a battery you were
-counting on has silently emptied.
+The alarm is accurate and the run is genuinely uneventful, which is the trap in
+this direction: `critical` here means "a component you declared failed", not "a
+consequence occurred". Compare it with chapter 6's single-feed run, where the
+same severity on `ups_energy_depleted` precedes a total loss of load. Severity
+is a property of the code, fixed in advance; it is not a measure of what the
+event cost.
+
+The mirror-image trap is a battery discharging while the service ratio stays at
+100%, which is what `REF-DC-2N-GEN-SUCCESS` does: UPS A carries the load for
+15 seconds, the generator picks it up, and the run reports 1,000,000 ppm with
+24,000,000,000 mJ gone from the battery. Nothing in the alarm list scales with
+that. It happens when a battery is the only source that can reach a load — in
+that run PDU B is in maintenance, so utility B has no route. It does not happen
+merely because the battery sits nearer to the load in the graph: stored energy
+is a last resort in the allocation, so a UPS that a live feed could relieve is
+never called on.
 
 Neither reading is complete on its own. Alarms tell you what changed; metrics
 tell you what it cost.
 
-## Trap two: a run with real unserved energy and no alarms at all
+## Trap two: a run whose only alarm belongs to no event
 
-This one matters more, because the failure mode is silence.
+This one is subtler, because the alarm you get points at nothing you wrote.
 
 Chapter 14's stranded-capacity topology: a 1 MW load fed through a 600 kW PDU,
 with a reserve cord left open. Run it healthy — no events at all:
@@ -138,27 +146,37 @@ dc-twin run guide-strand.snapshot.json strand.scenario.json --output results/str
 service ratio of 60%.
 
 ```text
--- segments 600, transitions 1, alarms 0, telemetry 4200
+-- segments 600, transitions 1, alarms 1, telemetry 4200
 -- alarms
+      0 ms  critical load_unserved          Modeled unserved load increased to 400000 W.
 ```
 
-**Zero alarms.**
+One alarm, at `0 ms`, and its `causal_event_id` is `system.initialized` — the
+synthetic transition that records the first solved state. The scenario contains
+no events at all, so there is no authored event to blame. The engine compares
+its first solved state against a nominal fully served baseline, which is why a
+run that is short from the first millisecond raises the alarm at `0 ms` rather
+than staying silent for the whole horizon. The same now applies to chapter 4's
+priority run, which starves a 300 kW load from `0 ms`.
 
-The reason is structural: `load_unserved` is raised on a *transition* from
-fully served to under-served. This run begins under-served, so there is no
-transition, so there is nothing to raise. The same applies to chapter 4's
-priority run, which starves a 300 kW load from `0 ms` and also reports zero
-alarms.
+The clear behaves normally from there. Close chapter 14's reserve cord at
+120,000 ms and the transition at that time carries
+`"alarms_cleared": ["alarm-0001-load-unserved"]`; in chapter 4's priority run
+the same clear arrives when the lab load steps to zero.
 
-The practical rule follows directly:
+Two things still do not follow from that alarm:
 
-> **Never conclude a run was healthy from an empty alarm list.**
+- **It says nothing about size or duration.** One raise covers a 1 W shortfall
+  on one load and a total blackout equally. Only `unserved_energy_mj` and
+  `interruption_duration_ms` distinguish them.
+- **Nothing else about that run is alarmed.** 1.8 MW of source capacity is
+  isolated from the unmet load for ten minutes and no code exists for it.
+
+So the rule stands, in a weaker form:
+
+> **Never conclude a run was healthy from a short alarm list.**
 > Check `unserved_energy_mj` and `modeled_redundancy_state` first. The alarm
-> list is an event log, and a condition that was true from the first
-> millisecond is not an event.
-
-This is the single most likely way to misread a dc-twin result, and it is
-entirely silent when it happens.
+> list tells you that a condition exists, never how much it cost.
 
 ## Alarms are not a control system
 

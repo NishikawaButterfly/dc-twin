@@ -70,7 +70,7 @@ def solve_capacity(snapshot: Snapshot, state: RuntimeState) -> CapacityFlowSumma
         )
     )
     sources = tuple(sorted((*non_battery_sources, *battery_sources)))
-    allocation = _allocate(snapshot, state, sources)
+    allocation = _allocate(snapshot, state, non_battery_sources, battery_sources=battery_sources)
     demand_w = sum(state.demand_w.values())
     served_w = sum(allocation.load_service_w.values())
     unserved_w = demand_w - served_w
@@ -115,44 +115,69 @@ class _Allocation:
     source_power_w: dict[str, int]
 
 
-def _allocate(snapshot: Snapshot, state: RuntimeState, sources: tuple[str, ...]) -> _Allocation:
+def _allocate(
+    snapshot: Snapshot,
+    state: RuntimeState,
+    live_sources: tuple[str, ...],
+    *,
+    battery_sources: tuple[str, ...] = (),
+) -> _Allocation:
+    """Allocate every load from live sources first, then from stored energy only.
+
+    Stage one offers the live non-battery sources to every load in
+    ``(priority, service_order, component_id)`` order. Stage two runs only when an
+    eligible battery source exists, and reconsiders the same loads in the same order,
+    on the same network with the battery edges added, against the capacity stage one
+    left. Because no battery edge exists during stage one, no stored watt is
+    dispatched while a live source can still reach any load at all.
+
+    Every eligible source is reported, so a source that was offered and delivered
+    nothing appears with a value of zero rather than disappearing from the result.
+    """
+
     used_component: dict[str, int] = defaultdict(int)
     used_connection: dict[str, int] = defaultdict(int)
-    used_source: dict[str, int] = defaultdict(int)
-    load_service: dict[str, int] = {}
+    used_source: dict[str, int] = defaultdict(
+        int, dict.fromkeys((*live_sources, *battery_sources), 0)
+    )
     loads = sorted(
         (component for component in snapshot.components if component.kind is ComponentKind.LOAD),
         key=lambda item: (item.priority or 0, item.service_order or 0, item.id),
     )
-    for load in loads:
-        demand = state.demand_w[load.id]
-        if (
-            demand <= 0
-            or not sources
-            or state.component_status[load.id] is not Availability.AVAILABLE
-        ):
-            load_service[load.id] = 0
+    load_service: dict[str, int] = {load.id: 0 for load in loads}
+    stages = [live_sources]
+    if battery_sources:
+        stages.append(tuple(sorted((*live_sources, *battery_sources))))
+    for stage_sources in stages:
+        if not stage_sources:
             continue
-        capacities, tags = _build_network(
-            snapshot,
-            state,
-            sources,
-            load.id,
-            demand,
-            used_component=used_component,
-            used_connection=used_connection,
-            used_source=used_source,
-        )
-        flow_value, edge_flow = _edmonds_karp(capacities, "@source", "@sink")
-        load_service[load.id] = flow_value
-        for edge, (category, identifier) in tags.items():
-            value = edge_flow.get(edge, 0)
-            if category == "component":
-                used_component[identifier] += value
-            elif category == "connection":
-                used_connection[identifier] += value
-            elif category == "source":
-                used_source[identifier] += value
+        for load in loads:
+            remaining_demand = state.demand_w[load.id] - load_service[load.id]
+            if (
+                remaining_demand <= 0
+                or state.component_status[load.id] is not Availability.AVAILABLE
+            ):
+                continue
+            capacities, tags = _build_network(
+                snapshot,
+                state,
+                stage_sources,
+                load.id,
+                remaining_demand,
+                used_component=used_component,
+                used_connection=used_connection,
+                used_source=used_source,
+            )
+            flow_value, edge_flow = _edmonds_karp(capacities, "@source", "@sink")
+            load_service[load.id] += flow_value
+            for edge, (category, identifier) in tags.items():
+                value = edge_flow.get(edge, 0)
+                if category == "component":
+                    used_component[identifier] += value
+                elif category == "connection":
+                    used_connection[identifier] += value
+                elif category == "source":
+                    used_source[identifier] += value
     return _Allocation(
         load_service_w=load_service,
         connection_flow_w=dict(used_connection),

@@ -18,7 +18,7 @@ and disappear when the machine stops itself.
 
 - Models utilities, generators, ATS/STS, transformers, switchgear, UPS units, PDUs, and loads as a directed acyclic topology, and reports a modeled redundancy state (2N, single path, battery backed, and so on) for each timeline segment.
 - Applies failure, restoration, maintenance, load-step, generator-outcome, and atomic-transfer events in a deterministic order, with explicit tie-breaks for equal-time events.
-- Allocates power with an integer max-flow pass over component and connection ratings, in `(priority, service_order, component_id)` order.
+- Allocates power with an integer max-flow pass over component and connection ratings, in `(priority, service_order, component_id)` order, taking live sources first and stored battery energy only for demand no live source can reach.
 - Records SHA-256 replay and state hashes plus a formula-level explanation for each metric, so the same inputs and model version reproduce the same result hash.
 - Serves stored runs through a read-only FastAPI application, a dependency-free web page, and immutable PostgreSQL records with Alembic migrations. The API exposes only the bundled reference scenarios and accepts no arbitrary topology.
 

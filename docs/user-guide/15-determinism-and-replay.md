@@ -54,7 +54,7 @@ dc-twin compare results/a.json results/b.json
 ```
 
 ```json
-{"left_run_id": "run-0ca87f32ca8385a8", "right_run_id": "run-0ca87f32ca8385a8", "same_computation": true, "metric_differences": {}}
+{"left_run_id": "run-72e2cb542c7489b9", "right_run_id": "run-72e2cb542c7489b9", "same_computation": true, "metric_differences": {}}
 ```
 
 ## Verifying a replay
@@ -67,13 +67,13 @@ dc-twin replay guide-2n.snapshot.json feed-loss-2n.scenario.json results/a.json
 ```
 
 ```json
-{"actual_computation_hash": "0ca87f32ca8385a83dcb8e453e32dc4a715c00b170efab61fcc13eecb2c89711", "expected_computation_hash": "0ca87f32ca8385a83dcb8e453e32dc4a715c00b170efab61fcc13eecb2c89711", "matches": true, "replay_run_id": "run-0ca87f32ca8385a8"}
+{"actual_computation_hash": "72e2cb542c7489b99f40fac14d0d43f777719798d084dcd3783cf2094f2b5bbb", "expected_computation_hash": "72e2cb542c7489b99f40fac14d0d43f777719798d084dcd3783cf2094f2b5bbb", "matches": true, "replay_run_id": "run-72e2cb542c7489b9"}
 ```
 
 Exit code 0. A mismatch exits 5 and reports both hashes:
 
 ```json
-{"actual_computation_hash": "5e82145756baab42492791ae5549fca0c476ff0191ff98235d95ee4342bc12b3", "expected_computation_hash": "0ca87f32ca8385a83dcb8e453e32dc4a715c00b170efab61fcc13eecb2c89711", "matches": false, "replay_run_id": "run-5e82145756baab42"}
+{"actual_computation_hash": "3bb8a47aa442f0e04834cd32a59ce70d8a0c6f4e91584656a93d68794956f2b5", "expected_computation_hash": "72e2cb542c7489b99f40fac14d0d43f777719798d084dcd3783cf2094f2b5bbb", "matches": false, "replay_run_id": "run-3bb8a47aa442f0e0"}
 ```
 
 A `matches: false` is never coerced to success. It is evidence of semantic
@@ -97,10 +97,10 @@ one integer.
 Move the utility failure from 60,000 ms to 60,001 ms.
 
 ```json
-{"computation_hash": "5e82145756baab42492791ae5549fca0c476ff0191ff98235d95ee4342bc12b3", "run_id": "run-5e82145756baab42"}
+{"computation_hash": "3bb8a47aa442f0e04834cd32a59ce70d8a0c6f4e91584656a93d68794956f2b5", "run_id": "run-3bb8a47aa442f0e0"}
 ```
 
-Base hash `0ca87f32…`, new hash `5e821457…`. One millisecond, an entirely
+Base hash `72e2cb54…`, new hash `3bb8a47a…`. One millisecond, an entirely
 different fingerprint. That is the collision resistance of SHA-256 doing its
 job: there is no such thing as a "close" hash.
 
@@ -109,7 +109,7 @@ job: there is no such thing as a "close" hash.
 Change `resolution_ms` from 1,000 to 2,000 and nothing else.
 
 ```json
-{"computation_hash": "13fccca12e0489f5e08fe8bda3516c84fa39bf6006176f91ce6131e3d066017b", "run_id": "run-13fccca12e0489f5"}
+{"computation_hash": "8080c8c42df260ffc375238d4aeadb349ef8c2fb494ac69604822c5c5bd73398", "run_id": "run-8080c8c42df260ff"}
 ```
 
 Now compare:
@@ -119,7 +119,7 @@ dc-twin compare results/2n-res1000.json results/2n-res2000.json
 ```
 
 ```json
-{"left_run_id": "run-0ca87f32ca8385a8", "metric_differences": {}, "right_run_id": "run-13fccca12e0489f5", "same_computation": false}
+{"left_run_id": "run-72e2cb542c7489b9", "metric_differences": {}, "right_run_id": "run-8080c8c42df260ff", "same_computation": false}
 ```
 
 **Every metric is identical and the hash is different.** This is the single most

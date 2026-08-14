@@ -82,15 +82,15 @@ dc-twin compare results/2n-res1000.json results/2n-res2000.json
 ```
 
 ```json
-{"left_run_id": "run-0ca87f32ca8385a8", "metric_differences": {}, "right_run_id": "run-13fccca12e0489f5", "same_computation": false}
+{"left_run_id": "run-72e2cb542c7489b9", "metric_differences": {}, "right_run_id": "run-8080c8c42df260ff", "same_computation": false}
 ```
 
 Every metric is identical. What changed is the output size:
 
 | Resolution | Timeline segments | Telemetry points |
 |---:|---:|---:|
-| 1,000 ms | 600 | 4,968 |
-| 2,000 ms | 301 | 2,493 |
+| 1,000 ms | 600 | 5,400 |
+| 2,000 ms | 300 | 2,700 |
 
 So resolution buys you timeline granularity and costs you output size. Choose
 it for the resolution at which you want to *read* the run, not for accuracy you

@@ -27,7 +27,13 @@ This is the rule to memorise:
 > **finite battery source** only when no such non-battery source can reach it
 > upstream, its own state is `available`, and its stored energy is positive.
 
-Three consequences, each of which surprises someone:
+Eligibility is not dispatch. An eligible battery only discharges for demand
+that no live source can reach, because the allocation of chapter 4 offers the
+live sources first and the batteries second. An eligible UPS that is never
+called on appears in `source_power_w` at `0 W` and ends the run with its energy
+untouched.
+
+Four consequences, each of which surprises someone:
 
 **A UPS does not discharge because the load lost power.** It discharges because
 *it* lost its upstream feed. In the shared-bus run from chapter 5, a single
@@ -38,6 +44,13 @@ neither noticed the load was dark.
 
 **A UPS that is upstream-energised contributes no battery capacity at all.**
 It is a pass-through node with a rating. It is not "supporting" anything.
+
+**An islanded UPS does not necessarily discharge.** In chapter 5's
+redundant-pair feed loss, UPS A loses its own upstream feed at 60,000 ms and is
+eligible for the rest of the run, and it delivers nothing: utility B reaches
+the load through path B, and stored energy is only reached for when no live
+source can. Eligibility tells you a unit *could* supply; `source_power_w` tells
+you whether it did.
 
 **A failed UPS is not a bypass.** Setting a UPS to `failed` removes the node
 entirely; power does not route around it. If your real design has a maintenance
