@@ -100,9 +100,11 @@ produces the same reading as a blackout.
 **Load.** A terminal node with `demand_w`, `priority` and `service_order`. Not
 an IT workload; `priority` is a sort key, not a criticality classification.
 
-**`load_unserved`.** A `critical` alarm raised when total unserved power goes
-from zero to positive. **Requires a transition**, so a run that is under-served
-from the first millisecond never raises it.
+**`load_unserved`.** A `critical` alarm raised when total unserved power is
+positive in the run's first solved state, or later goes from zero to positive.
+A run that begins under-served raises it at `0 ms` against
+`system.initialized`. One raise per outage, with no indication of how much or
+for how long.
 
 **Maintenance.** A component availability value. Behaviourally identical to
 `failed` inside the solver; the difference is the alarm code, its `info`

@@ -149,7 +149,11 @@ service_ratio_ppm
 
 When demanded energy is zero, the ratio is defined as `1,000,000 ppm`.
 
-### 5.5 Traceability and telemetry
+### 5.5 Service alarms
+
+The `load_unserved` alarm reports the modeled service condition rather than any single event. It is evaluated after each transition by comparing total unserved power before and after that transition, and it is raised when unserved power moves from zero to positive and cleared when it returns to zero. A run's first solved state is evaluated against a nominal fully served baseline, so a scenario that is already short at time zero must raise the alarm at `0 ms` against the `system.initialized` transition, with the same code and severity as any later raise. One raise covers a condition until it clears; the alarm carries no magnitude and no duration.
+
+### 5.6 Traceability and telemetry
 
 Every transition records before and after state hashes and alarm changes. Every timeline segment records a state hash. Metric explanations identify formulas, input references, causal event references, and a concise interpretation.
 

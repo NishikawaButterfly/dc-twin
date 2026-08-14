@@ -78,7 +78,7 @@ dc-twin run guide-strand.snapshot.json strand.scenario.json --output results/str
 | Service ratio | 600,000 ppm (60%) |
 | Peak stranded capacity | 400,000 W |
 | Worst modeled state | `partial_service` |
-| Alarms | 0 |
+| Alarms | 1 (`load_unserved` at `0 ms`) |
 
 Check the stranded figure by hand:
 
@@ -91,9 +91,11 @@ stranded_capacity_w       = min(400,000, 1,800,000) = 400,000 W
 ```
 
 1.8 MW of source capacity is sitting idle while 400 kW of demand goes unmet for
-ten minutes, and the run raises no alarms whatsoever. This is the trap: a
-topology that looks 2N on paper, declares itself `TWO_N` in its redundancy
-group, and delivers 60% of its load from the first millisecond.
+ten minutes. The shortfall itself is alarmed — one `load_unserved` at `0 ms`,
+raised against `system.initialized` because the run is short in its first
+solved state — but the isolation is not, and no alarm code exists for it. This
+is the trap: a topology that looks 2N on paper, declares itself `TWO_N` in its
+redundancy group, and delivers 60% of its load from the first millisecond.
 
 ### Resolving it
 

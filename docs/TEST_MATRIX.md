@@ -18,6 +18,7 @@ Normative values are integer watts, millijoules, milliseconds, and parts per mil
 | Capacity allocator | Unit tests | Node and edge limits; multiple sources; bottleneck; unreachable load; stable adjacency/source order; priority and service-order allocation |
 | UPS model | Unit tests | Pass-through; battery source eligibility; exact debit; low threshold; exact depletion split; no negative energy; no modeled recharge |
 | Timeline | Unit tests | Half-open contiguous segments; event and resolution boundaries; causal IDs; state hashes; conservation invariants |
+| Alarms | Unit tests | Raise and clear per code; deduplicated re-raise; service alarm at time zero for a run that begins under-served, and its later clear |
 | Metrics | Unit tests | Exact demanded/served/unserved energy; round-half-up ratio; zero-demand ratio; interruption duration/count; extrema; worst redundancy state; stranded capacity |
 | Determinism | Unit tests | Input key reordering; repeated run; replay; stable hash; run ID excluded; meaningful input or engine-version change detected |
 | Reference fixtures | Acceptance tests | Healthy, generator success, and every composite value in `REFERENCE_SCENARIO.md` |

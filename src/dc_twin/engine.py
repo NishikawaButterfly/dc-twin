@@ -23,6 +23,10 @@ from dc_twin.validation import MAX_TRANSITIONS
 
 ENGINE_VERSION = "1.0.0"
 
+# A run enters its first solved state from a nominal fully served baseline, so a scenario
+# that is already short at time zero raises the same alarm as one that becomes short later.
+_NOMINAL_UNSERVED_W = 0
+
 
 @dataclass(slots=True)
 class _Accumulator:
@@ -114,13 +118,20 @@ class _Run:
         self.sequence = 0
         self.current_time = 0
         self.causes = ["system.initialized"]
+        initial_raised, _initial_cleared = _service_alarms(
+            self.alarms,
+            time_ms=0,
+            event_id="system.initialized",
+            before_unserved_w=_NOMINAL_UNSERVED_W,
+            after_unserved_w=self.summary.unserved_w,
+        )
         self._record(
             time_ms=0,
             event_id="system.initialized",
             event_kind="system_initialization",
             target_id=None,
             before_state_hash=_state_hash(self.state),
-            raised=[],
+            raised=initial_raised,
             cleared=[],
         )
 
@@ -167,8 +178,8 @@ class _Run:
                 self.alarms,
                 time_ms=event.time_ms,
                 event_id=event.id,
-                before=service_baseline,
-                after=self.summary,
+                before_unserved_w=service_baseline.unserved_w,
+                after_unserved_w=self.summary.unserved_w,
             )
         self._record(
             time_ms=event.time_ms,
@@ -191,8 +202,8 @@ class _Run:
             self.alarms,
             time_ms=self.current_time,
             event_id=event_id,
-            before=before_summary,
-            after=self.summary,
+            before_unserved_w=before_summary.unserved_w,
+            after_unserved_w=self.summary.unserved_w,
         )
         self._record(
             time_ms=self.current_time,
@@ -491,24 +502,24 @@ def _service_alarms(
     *,
     time_ms: int,
     event_id: str,
-    before: CapacityFlowSummary,
-    after: CapacityFlowSummary,
+    before_unserved_w: int,
+    after_unserved_w: int,
 ) -> tuple[list[str], list[str]]:
     raised: list[str] = []
     cleared: list[str] = []
-    if before.unserved_w == 0 and after.unserved_w > 0:
+    if before_unserved_w == 0 and after_unserved_w > 0:
         raised.append(
             alarms.raise_alarm(
                 time_ms=time_ms,
                 severity="critical",
                 code="load_unserved",
-                message=f"Modeled unserved load increased to {after.unserved_w} W.",
+                message=f"Modeled unserved load increased to {after_unserved_w} W.",
                 component_id=None,
                 causal_event_id=event_id,
                 active_key="load_unserved:system",
             )
         )
-    elif before.unserved_w > 0 and after.unserved_w == 0:
+    elif before_unserved_w > 0 and after_unserved_w == 0:
         cleared.extend(alarms.clear("load_unserved:system"))
     return raised, cleared
 

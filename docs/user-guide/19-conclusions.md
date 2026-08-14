@@ -228,10 +228,11 @@ the other. The allocation is feasible, not physical.
 
 ### About what the alarm list means
 
-You may not conclude a run was healthy because it raised no alarms. Chapter
+You may not conclude a run was healthy because its alarm list is short. Chapter
 14's trap topology serves 60% of its load for a full ten minutes and raises
-zero alarms, because the condition was true from the first millisecond and
-`load_unserved` requires a transition.
+exactly one alarm to say so, with no indication of size or duration, while
+1.8 MW of source capacity sits isolated from the unmet load under no alarm code
+at all.
 
 ## The inputs that decide everything
 
@@ -295,8 +296,8 @@ reproduce with a hash.
 
 It is very good at exposing isolation. Chapter 14's trap topology — 1.8 MW of
 source capacity idle while 400 kW goes unserved, in the normal configuration,
-with no alarms — is exactly the kind of thing a single-line diagram hides and
-one healthy run reveals.
+under no alarm code of its own — is exactly the kind of thing a single-line
+diagram hides and one healthy run reveals.
 
 And it is very good at forcing a scenario to be written down. The discipline of
 having to author every response event, at a specific millisecond, is itself

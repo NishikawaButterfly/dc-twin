@@ -15,6 +15,16 @@ from tests.helpers import (
 )
 
 
+def _starved_snapshot_data() -> dict[str, object]:
+    """Return a topology whose only source cannot cover the load from the first instant."""
+
+    data = minimal_snapshot_data()
+    for component in data["components"]:
+        if component["id"] == "source":
+            component["capacity_w"] = 50
+    return data
+
+
 class ReferenceEngineTests(unittest.TestCase):
     def setUp(self) -> None:
         self.snapshot = parse_snapshot(reference_snapshot_data())
@@ -212,6 +222,53 @@ class GenericEngineTests(unittest.TestCase):
         transitions = result["transitions"]
         assert isinstance(transitions, list)
         self.assertEqual([item["time_ms"] for item in transitions], [0, 100, 300, 500])
+
+    def test_run_that_begins_under_served_raises_the_alarm_at_time_zero(self) -> None:
+        snapshot = parse_snapshot(_starved_snapshot_data())
+        scenario = parse_scenario(minimal_scenario_data(), snapshot)
+        result = simulate(snapshot, scenario)
+        timeline = result["timeline"]
+        assert isinstance(timeline, list)
+        self.assertEqual(timeline[0]["served_w"], 50)
+        self.assertEqual(timeline[0]["unserved_w"], 30)
+        alarms = result["alarms"]
+        assert isinstance(alarms, list)
+        self.assertEqual(
+            [(alarm["code"], alarm["severity"], alarm["time_ms"]) for alarm in alarms],
+            [("load_unserved", "critical", 0)],
+        )
+        self.assertEqual(alarms[0]["causal_event_id"], "system.initialized")
+        transitions = result["transitions"]
+        assert isinstance(transitions, list)
+        self.assertEqual(transitions[0]["alarms_raised"], [alarms[0]["id"]])
+
+    def test_alarm_raised_at_time_zero_still_clears_when_service_returns(self) -> None:
+        snapshot = parse_snapshot(_starved_snapshot_data())
+        scenario = parse_scenario(
+            minimal_scenario_data(
+                events=[
+                    {
+                        "id": "shed",
+                        "time_ms": 500,
+                        "kind": "load_step",
+                        "component_id": "load",
+                        "demand_w": 50,
+                    }
+                ]
+            ),
+            snapshot,
+        )
+        result = simulate(snapshot, scenario)
+        alarms = result["alarms"]
+        transitions = result["transitions"]
+        assert isinstance(alarms, list)
+        assert isinstance(transitions, list)
+        self.assertEqual([alarm["code"] for alarm in alarms], ["load_unserved"])
+        self.assertEqual(transitions[0]["alarms_raised"], [alarms[0]["id"]])
+        self.assertEqual(transitions[1]["alarms_cleared"], [alarms[0]["id"]])
+        metrics = result["metrics"]
+        assert isinstance(metrics, dict)
+        self.assertEqual(metrics["interruption_duration_ms"], 500)
 
     def test_input_objects_are_not_mutated(self) -> None:
         snapshot_data = minimal_snapshot_data()

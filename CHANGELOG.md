@@ -4,6 +4,10 @@ All notable changes are documented here. This project follows [Semantic Versioni
 
 ## [Unreleased]
 
+### Fixed
+
+- A scenario whose first solved state is already under-served now raises `load_unserved` at `0 ms` against the `system.initialized` transition, with the same code and severity as a later raise, and clears normally when service returns. Such runs previously reported an empty alarm list for the whole horizon. No bundled reference scenario begins under-served, so every published reference hash is unchanged.
+
 ## [0.2.0] - 2026-08-02
 
 ### Added

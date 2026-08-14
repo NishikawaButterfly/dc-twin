@@ -334,10 +334,11 @@ of semantic drift and should fail a release gate. Check, in order:
 The hardest failures are the ones that produce a clean run. Three to check for
 deliberately:
 
-**A run with unserved energy and no alarms.** If the shortfall exists from
-`0 ms`, no `load_unserved` alarm is ever raised, because the alarm requires a
-transition. Chapter 14's trap topology serves 60% of its load for ten minutes
-in complete silence. Always read `unserved_energy_mj` first.
+**A run whose whole story is one alarm at `0 ms`.** If the shortfall exists
+from the first solved state, you get a single `load_unserved` raised against
+`system.initialized` and nothing further, however long or large the shortfall
+grows. Chapter 14's trap topology serves 60% of its load for ten minutes on one
+alarm. Always read `unserved_energy_mj` first.
 
 **A permanently weak redundancy state.** If a topology you believe is redundant
 reports `supported` in every segment, check the `path` tags. Only `A` and `B`
