@@ -98,6 +98,14 @@ If none of this vocabulary is familiar, start with the [plain-language explainer
 - [Threat model](docs/THREAT_MODEL.md) and [Data provenance](docs/DATA_PROVENANCE.md)
 - [Roadmap](ROADMAP.md) and [Changelog](CHANGELOG.md)
 
+If you intend to model your own topology and quote the result, read the
+[Simulation and Analysis Guide](docs/user-guide/). It is written for an
+electrical engineer and works through building a topology, running a scenario
+across all three interfaces, and reading the timeline, alarms, unserved energy
+and stranded capacity correctly. Its closing chapter sets out, with worked
+examples from the same run, which conclusions a result supports and which it
+does not.
+
 ## Contributing and license
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) before opening a change. Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
