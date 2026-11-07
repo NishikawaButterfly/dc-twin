@@ -12,8 +12,11 @@ updates:
       # an upgrade of any size only has to pass CI.
       dev-tools:
         patterns: [build, httpx, mypy, pip-audit, pytest, pytest-cov, ruff, twine]
-      # What the image runs to serve the API. Minor and patch releases are
-      # routine and move together; a major arrives in its own pull request.
+      # What the image runs to serve the API. pydantic is the validation
+      # layer fastapi runs on, so the three are tested together. Dependabot
+      # reads x.y.z by position: until fastapi and uvicorn reach 1.0, their
+      # breaking releases count as minor and land here, gated by CI, and
+      # update-types only keeps a pydantic major out of the group.
       # The database and migration libraries (alembic, psycopg, sqlalchemy)
       # stay individual, so each of their versions is reviewed on its own.
       api-server:
