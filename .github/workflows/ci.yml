@@ -17,6 +17,12 @@ concurrency:
 env:
   UV_VERSION: "0.12.1"
 
+# PowerShell, the Windows default, takes a multi-line step's exit code from
+# its last command only; bash here runs with -e and -o pipefail on every OS.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   quality:
     name: Quality, contracts, and package
