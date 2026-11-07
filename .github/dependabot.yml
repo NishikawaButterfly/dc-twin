@@ -26,9 +26,4 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     labels: [dependencies, container]
-    ignore:
-      - dependency-name: python
-        # Skip release-candidate image tags, both published forms:
-        # glued (3.15.0rc1-slim-bookworm) and hyphenated (3.15-rc).
-        versions: ["*.*rc*"]
 
