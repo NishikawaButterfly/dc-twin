@@ -5,9 +5,10 @@ on:
     branches: [main, "feature/**"]
   pull_request:
     branches: [main]
-  # Mondays 06:00 UTC, so the dependency audit runs even when nothing is pushed.
+  # Mondays 06:17 UTC, so the dependency audit runs even when nothing is
+  # pushed. Not on the hour: GitHub may delay or drop scheduled runs then.
   schedule:
-    - cron: "0 6 * * 1"
+    - cron: "17 6 * * 1"
   workflow_dispatch:
 
 permissions:
