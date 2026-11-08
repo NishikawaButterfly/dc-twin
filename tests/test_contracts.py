@@ -19,6 +19,8 @@ from tests.helpers import ROOT
 HAS_API = importlib.util.find_spec("fastapi") is not None
 
 if HAS_API:
+    from fastapi.testclient import TestClient
+
     from dc_twin.api import app
 
 CONTRACT = Path("contracts", "openapi", "v1", "openapi.json")
@@ -56,6 +58,13 @@ class OpenApiContractTests(unittest.TestCase):
             # The verdict is this test's own; the script only words the difference.
             describe = runpy.run_path(str(ROOT / GENERATOR))["describe_difference"]
             self.fail(MISMATCH + describe(committed, generated, CONTRACT.as_posix()) + REGENERATE)
+
+    def test_api_serves_the_committed_contract(self) -> None:
+        with TestClient(app) as client:
+            response = client.get("/api/v1/openapi.json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["content-type"], "application/json")
+        self.assertEqual(response.json(), json.loads((ROOT / CONTRACT).read_bytes()))
 
     def test_check_reports_a_one_character_title_edit_as_a_unified_diff(self) -> None:
         shortened = title_line(app.title[:-1])
