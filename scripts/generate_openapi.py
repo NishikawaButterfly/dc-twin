@@ -48,7 +48,7 @@ def describe_difference(committed: bytes, generated: str, name: str) -> str:
     except UnicodeDecodeError:
         text = committed.decode("utf-8", errors="backslashreplace")
         notes.append("It is not valid UTF-8; bytes that do not decode are shown as \\xNN.")
-    if text.startswith("﻿"):
+    if text.startswith("\ufeff"):
         text = text[1:]
         notes.append("It starts with a UTF-8 byte order mark; the generator writes none.")
     if "\r" in text:
