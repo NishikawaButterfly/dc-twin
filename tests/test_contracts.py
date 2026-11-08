@@ -29,6 +29,10 @@ MISMATCH = f"{CONTRACT.as_posix()} does not match the OpenAPI document the API g
 NOT_UTF8 = "It is not valid UTF-8; bytes that do not decode are shown as \\xNN.\n"
 BYTE_ORDER_MARK = "It starts with a UTF-8 byte order mark; the generator writes none.\n"
 CR_LINE_ENDINGS = "It has CRLF or CR line endings; the generator writes LF.\n"
+ESCAPES = (
+    "The diff shows a backslash as \\\\, a space at the end of a line as \\u0020, and a"
+    " character outside printable ASCII as \\uNNNN, or \\UNNNNNNNN above U+FFFF.\n"
+)
 REGENERATE = "Regenerate it with: uv run python scripts/generate_openapi.py\n"
 
 
@@ -101,13 +105,64 @@ class OpenApiContractTests(unittest.TestCase):
         latin1 = title.encode().replace(b'",\n', b'\xe9",\n')
         status, lines = self.check_edited_contract(self.with_title_line(latin1))
         self.assert_reported_as_diff(
-            status, lines, ["-" + title.replace('",\n', '\\xe9",\n'), "+" + title], [NOT_UTF8]
+            status,
+            lines,
+            ["-" + title.replace('",\n', '\\xe9",\n'), "+" + title],
+            [NOT_UTF8, ESCAPES],
         )
 
     def test_check_splits_its_diff_at_line_feeds_only(self) -> None:
-        separated = title_line(app.title + "\u2028")
-        status, lines = self.check_edited_contract(self.with_title_line(separated.encode()))
-        self.assert_reported_as_diff(status, lines, ["-" + separated, "+" + title_line(app.title)])
+        title = title_line(app.title)
+        self.assert_shown_escaped(
+            title.replace('",\n', '\u2028",\n'), title.replace('",\n', '\\u2028",\n')
+        )
+
+    def test_check_escapes_a_space_at_the_end_of_a_line(self) -> None:
+        title = title_line(app.title)
+        self.assert_shown_escaped(title.replace(",\n", ", \n"), title.replace(",\n", ",\\u0020\n"))
+
+    def test_check_escapes_a_no_break_space(self) -> None:
+        title = title_line(app.title)
+        self.assert_shown_escaped(title.replace(": ", ":\u00a0"), title.replace(": ", ":\\u00a0"))
+
+    def test_check_escapes_a_zero_width_space(self) -> None:
+        title = title_line(app.title)
+        self.assert_shown_escaped(
+            title.replace('",\n', '\u200b",\n'), title.replace('",\n', '\\u200b",\n')
+        )
+
+    def test_check_escapes_a_byte_order_mark_inside_a_line(self) -> None:
+        title = title_line(app.title)
+        self.assert_shown_escaped(
+            title.replace('",\n', '\ufeff",\n'), title.replace('",\n', '\\ufeff",\n')
+        )
+
+    def test_check_escapes_a_nul_byte(self) -> None:
+        title = title_line(app.title)
+        self.assert_shown_escaped(
+            title.replace('",\n', '\x00",\n'), title.replace('",\n', '\\u0000",\n')
+        )
+
+    def test_check_shows_a_json_escape_apart_from_the_character_it_encodes(self) -> None:
+        # In JSON, the six characters \u00a0 stand for a no-break space: the diff must not
+        # show them as it shows the no-break space itself.
+        title = title_line(app.title)
+        self.assert_shown_escaped(
+            title.replace('",\n', '\\u00a0",\n'), title.replace('",\n', '\\\\u00a0",\n')
+        )
+
+    def test_check_escapes_every_line_its_diff_shows(self) -> None:
+        # The document the API generates is ASCII, so this calls the script's description
+        # of a difference on made-up texts, in which an unchanged line holds a no-break space.
+        describe = runpy.run_path(str(ROOT / GENERATOR))["describe_difference"]
+        generated = '{\n  "a": "x\u00a0y",\n  "b": 2\n}\n'
+        committed = generated.replace('"b": 2', '"b": 1').encode()
+        self.assertEqual(
+            describe(committed, generated, "made-up.json"),
+            ESCAPES
+            + "--- made-up.json (committed)\n+++ made-up.json (generated)\n@@ -1,4 +1,4 @@\n"
+            + ' {\n   "a": "x\\u00a0y",\n-  "b": 1\n+  "b": 2\n }\n',
+        )
 
     def test_check_reports_a_missing_contract(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -125,6 +180,13 @@ class OpenApiContractTests(unittest.TestCase):
             return generated.replace(title, line)
 
         return edit
+
+    def assert_shown_escaped(self, edited: str, shown: str) -> None:
+        """Check a contract whose title line reads `edited`: its diff must show it as `shown`."""
+        status, lines = self.check_edited_contract(self.with_title_line(edited.encode()))
+        self.assert_reported_as_diff(
+            status, lines, ["-" + shown, "+" + title_line(app.title)], [ESCAPES]
+        )
 
     def check_edited_contract(self, edit: Callable[[bytes], bytes]) -> tuple[object, list[str]]:
         """Generate the contract in a scratch tree, edit its bytes, and check it as CI does."""
