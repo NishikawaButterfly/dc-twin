@@ -5,14 +5,29 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     labels: [dependencies, python]
+    groups:
+      # The test and release extras. None of it is a runtime dependency, so
+      # an upgrade of any size only has to pass CI.
+      dev-tools:
+        patterns: [build, httpx, mypy, pip-audit, pytest, pytest-cov, ruff, twine]
+      # What the image runs to serve the API. pydantic is the validation
+      # layer fastapi runs on, so the three are tested together. Dependabot
+      # reads x.y.z by position: until fastapi and uvicorn reach 1.0, their
+      # breaking releases count as minor and land here, gated by CI, and
+      # update-types only keeps a pydantic major out of the group.
+      # The database and migration libraries (alembic, psycopg, sqlalchemy)
+      # stay individual, so each of their versions is reviewed on its own.
+      api-server:
+        patterns: [fastapi, pydantic, uvicorn]
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     labels: [dependencies, ci]
     groups:
       # Actions that ship as steps of one workflow (codeql-action init and
