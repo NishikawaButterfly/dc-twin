@@ -23,6 +23,7 @@ Normative values are integer watts, millijoules, milliseconds, and parts per mil
 | Determinism | Unit tests | Input key reordering; repeated run; replay; stable hash; run ID excluded; meaningful input or engine-version change detected |
 | Reference fixtures | Acceptance tests | Healthy, generator success, and every composite value in `REFERENCE_SCENARIO.md` |
 | API | HTTP tests | Route success; RFC-style problem response; unknown scenario/run; invalid body; result contract; telemetry CSV content type and headers |
+| OpenAPI contract | Unit tests and CI check | Committed `contracts/openapi/v1/openapi.json` identical to the document the API generates; a one-character difference, a missing final newline included, reported as a unified diff with the command that regenerates the file; a missing file reported |
 | Persistence | PostgreSQL integration tests | Migration up; append and retrieve; rollback on failure; replay lineage; canonical payload round trip; readiness failure |
 | Browser | Smoke and accessibility checks | Scenario listing; run state; timeline/alarms; empty/error state; JSON and CSV export; keyboard use; reduced motion; narrow viewport |
 | Packaging | Build and unit tests | Source and wheel build; metadata, including `License-Expression: MIT` with no `License` field or license classifier, and `LICENSE` as the only `License-File`, shipped byte-identical to the repository copy; `twine check`; installed-wheel CLI/API import smoke |

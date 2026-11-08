@@ -23,6 +23,7 @@ python -m pip install -e ".[test,release]"
 Run the same focused checks used by CI:
 
 ```powershell
+python scripts/generate_openapi.py --check
 ruff format --check --diff .
 ruff check .
 mypy src
