@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import codecs
 import contextlib
-import difflib
 import importlib.util
 import io
 import json
@@ -52,15 +51,11 @@ def lines_of(text: str) -> list[str]:
 class OpenApiContractTests(unittest.TestCase):
     def test_committed_openapi_matches_its_generator(self) -> None:
         generated = json.dumps(app.openapi(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-        committed = (ROOT / CONTRACT).read_text(encoding="utf-8")
-        if committed != generated:
-            diff = difflib.unified_diff(
-                committed.splitlines(keepends=True),
-                generated.splitlines(keepends=True),
-                f"{CONTRACT.as_posix()} (committed)",
-                f"{CONTRACT.as_posix()} (generated)",
-            )
-            self.fail(MISMATCH + "".join(diff) + REGENERATE)
+        committed = (ROOT / CONTRACT).read_bytes()
+        if committed != generated.encode():
+            # The verdict is this test's own; the script only words the difference.
+            describe = runpy.run_path(str(ROOT / GENERATOR))["describe_difference"]
+            self.fail(MISMATCH + describe(committed, generated, CONTRACT.as_posix()) + REGENERATE)
 
     def test_check_reports_a_one_character_title_edit_as_a_unified_diff(self) -> None:
         shortened = title_line(app.title[:-1])
