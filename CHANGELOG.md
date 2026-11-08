@@ -7,6 +7,7 @@ All notable changes are documented here. This project follows [Semantic Versioni
 ### Changed
 
 - The capacity allocation now treats sources as two classes and solves each interval in two stages: every load from the live sources (available utilities and running generators) first, then, only for demand still short, the same loads with the battery edges added. A UPS therefore never discharges while a live source can reach the load, and supplies exactly the demand no live source can reach. Both stages remain deterministic, so results stay reproducible. Every eligible source is now reported in `source_power_w`, including at `0 W` and including in intervals with zero demand.
+- The wheel and sdist metadata declare the license as the SPDX expression `MIT` (`License-Expression`, PEP 639) instead of the full text of `LICENSE` in the deprecated `License` field, and drop the deprecated `License :: OSI Approved :: MIT License` classifier. `LICENSE` is still listed as `License-File` and ships in both archives.
 
 ### Fixed
 
