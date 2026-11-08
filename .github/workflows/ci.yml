@@ -5,6 +5,10 @@ on:
     branches: [main, "feature/**"]
   pull_request:
     branches: [main]
+  # Mondays 06:17 UTC, so the dependency audit runs even when nothing is
+  # pushed. Not on the hour: GitHub may delay or drop scheduled runs then.
+  schedule:
+    - cron: "17 6 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -16,6 +20,12 @@ concurrency:
 
 env:
   UV_VERSION: "0.12.1"
+
+# PowerShell, the Windows default, takes a multi-line step's exit code from
+# its last command only; bash here runs with -e and -o pipefail on every OS.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   quality:
