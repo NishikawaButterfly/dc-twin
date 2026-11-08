@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import sys
 from pathlib import Path
@@ -11,6 +12,36 @@ from dc_twin.api import app
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "contracts" / "openapi" / "v1" / "openapi.json"
+REGENERATE = "uv run python scripts/generate_openapi.py"
+
+
+def unified_diff(committed: str, generated: str, name: str) -> str:
+    lines = difflib.unified_diff(
+        committed.splitlines(keepends=True),
+        generated.splitlines(keepends=True),
+        fromfile=f"{name} (committed)",
+        tofile=f"{name} (generated)",
+    )
+    # A last line without a newline would run into the next one: mark it as diff and git do.
+    return "".join(
+        line if line.endswith("\n") else line + "\n\\ No newline at end of file\n" for line in lines
+    )
+
+
+def check(rendered: str) -> int:
+    name = TARGET.relative_to(ROOT).as_posix()
+    if not TARGET.is_file():
+        sys.stderr.write(f"{name} is missing.\nRegenerate it with: {REGENERATE}\n")
+        return 1
+    committed = TARGET.read_text(encoding="utf-8")
+    if committed == rendered:
+        return 0
+    sys.stderr.write(
+        f"{name} does not match the OpenAPI document the API generates:\n"
+        + unified_diff(committed, rendered, name)
+        + f"Regenerate it with: {REGENERATE}\n"
+    )
+    return 1
 
 
 def main() -> int:
@@ -19,10 +50,7 @@ def main() -> int:
     arguments = parser.parse_args()
     rendered = json.dumps(app.openapi(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if arguments.check:
-        if not TARGET.is_file() or TARGET.read_text(encoding="utf-8") != rendered:
-            sys.stderr.write("Committed OpenAPI document is missing or stale.\n")
-            return 1
-        return 0
+        return check(rendered)
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     TARGET.write_text(rendered, encoding="utf-8", newline="\n")
     return 0
