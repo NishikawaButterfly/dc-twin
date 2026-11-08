@@ -31,13 +31,13 @@ dependencies = [
 [project.optional-dependencies]
 test = [
   "httpx==0.28.1",
-  "mypy==2.3.0",
-  "pytest==9.1.1",
+  "mypy==2.4.1",
+  "pytest==9.2.0",
   "pytest-cov==7.1.0",
-  "ruff==0.16.3",
+  "ruff==0.17.3",
 ]
 release = [
-  "build==1.5.0",
+  "build==1.6.1",
   "pip-audit==2.10.1",
   "twine==7.0.0",
 ]
