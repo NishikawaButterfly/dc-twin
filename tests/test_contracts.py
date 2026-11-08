@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import codecs
 import contextlib
+import copy
 import importlib.util
 import io
 import json
@@ -24,8 +25,10 @@ if HAS_API:
     from dc_twin.api import app
 
 CONTRACT = Path("contracts", "openapi", "v1", "openapi.json")
+SERVED = "/api/v1/openapi.json"
 GENERATOR = Path("scripts", "generate_openapi.py")
 MISMATCH = f"{CONTRACT.as_posix()} does not match the OpenAPI document the API generates:\n"
+NOT_SERVED = f"{CONTRACT.as_posix()} does not match the document the API serves at {SERVED}:\n"
 NOT_UTF8 = "It is not valid UTF-8; bytes that do not decode are shown as \\xNN.\n"
 BYTE_ORDER_MARK = "It starts with a UTF-8 byte order mark; the generator writes none.\n"
 CR_LINE_ENDINGS = "It has CRLF or CR line endings; the generator writes LF.\n"
@@ -69,6 +72,27 @@ class OpenApiContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers["content-type"], "application/json")
         self.assertEqual(response.json(), json.loads((ROOT / CONTRACT).read_bytes()))
+
+    def test_a_served_title_edit_is_reported_as_a_unified_diff(self) -> None:
+        served = copy.deepcopy(app.openapi())
+        served["info"]["title"] = app.title[:-1]
+        with (
+            mock.patch.object(app, "openapi", return_value=served),
+            self.assertRaises(AssertionError) as raised,
+        ):
+            self.test_api_serves_the_committed_contract()
+        lines = lines_of(str(raised.exception))
+        header = [
+            NOT_SERVED,
+            f"--- {CONTRACT.as_posix()} (committed)\n",
+            f"+++ {SERVED} (served)\n",
+        ]
+        self.assertEqual(lines[: len(header)], header)
+        self.assertTrue(lines[len(header)].startswith("@@ "))
+        self.assertEqual(
+            [line for line in lines[len(header) + 1 :] if not line.startswith(" ")],
+            ["-" + title_line(app.title), "+" + title_line(app.title[:-1])],
+        )
 
     def test_check_reports_a_one_character_title_edit_as_a_unified_diff(self) -> None:
         shortened = title_line(app.title[:-1])
