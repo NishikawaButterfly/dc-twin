@@ -33,6 +33,8 @@ twine check dist\*
 pip-audit
 ```
 
+When the first check fails, it prints the command that regenerates the contract as CI runs it, `uv run python scripts/generate_openapi.py`; in the environment above, the same command is `python scripts/generate_openapi.py`.
+
 Do not commit virtual environments, generated results, database volumes, credentials, or local environment files.
 
 ## Contracts and compatibility
