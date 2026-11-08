@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import io
 import json
 import sys
 from pathlib import Path
@@ -15,10 +16,16 @@ TARGET = ROOT / "contracts" / "openapi" / "v1" / "openapi.json"
 REGENERATE = "uv run python scripts/generate_openapi.py"
 
 
+def lines_of(text: str) -> list[str]:
+    # The file's lines end at LF. str.splitlines() would also split at U+2028
+    # and other separators, which the generator writes unescaped in strings.
+    return io.StringIO(text, newline="\n").readlines()
+
+
 def unified_diff(committed: str, generated: str, name: str) -> str:
     lines = difflib.unified_diff(
-        committed.splitlines(keepends=True),
-        generated.splitlines(keepends=True),
+        lines_of(committed),
+        lines_of(generated),
         fromfile=f"{name} (committed)",
         tofile=f"{name} (generated)",
     )
@@ -28,17 +35,39 @@ def unified_diff(committed: str, generated: str, name: str) -> str:
     )
 
 
+def describe_difference(committed: bytes, generated: str, name: str) -> str:
+    """Say how the committed bytes differ from the generated document.
+
+    What a diff cannot show is named first, one line each: bytes that are not
+    UTF-8, a byte order mark, CR line endings. The diff that follows compares
+    the text with those set aside, and is empty when nothing else differs.
+    """
+    notes: list[str] = []
+    try:
+        text = committed.decode("utf-8")
+    except UnicodeDecodeError:
+        text = committed.decode("utf-8", errors="backslashreplace")
+        notes.append("It is not valid UTF-8; bytes that do not decode are shown as \\xNN.")
+    if text.startswith("﻿"):
+        text = text[1:]
+        notes.append("It starts with a UTF-8 byte order mark; the generator writes none.")
+    if "\r" in text:
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
+        notes.append("It has CRLF or CR line endings; the generator writes LF.")
+    return "".join(f"{note}\n" for note in notes) + unified_diff(text, generated, name)
+
+
 def check(rendered: str) -> int:
     name = TARGET.relative_to(ROOT).as_posix()
     if not TARGET.is_file():
         sys.stderr.write(f"{name} is missing.\nRegenerate it with: {REGENERATE}\n")
         return 1
-    committed = TARGET.read_text(encoding="utf-8")
-    if committed == rendered:
+    committed = TARGET.read_bytes()
+    if committed == rendered.encode():
         return 0
     sys.stderr.write(
         f"{name} does not match the OpenAPI document the API generates:\n"
-        + unified_diff(committed, rendered, name)
+        + describe_difference(committed, rendered, name)
         + f"Regenerate it with: {REGENERATE}\n"
     )
     return 1
@@ -52,7 +81,7 @@ def main() -> int:
     if arguments.check:
         return check(rendered)
     TARGET.parent.mkdir(parents=True, exist_ok=True)
-    TARGET.write_text(rendered, encoding="utf-8", newline="\n")
+    TARGET.write_bytes(rendered.encode())
     return 0
 
 
