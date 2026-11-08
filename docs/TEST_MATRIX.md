@@ -25,7 +25,7 @@ Normative values are integer watts, millijoules, milliseconds, and parts per mil
 | API | HTTP tests | Route success; RFC-style problem response; unknown scenario/run; invalid body; result contract; telemetry CSV content type and headers |
 | Persistence | PostgreSQL integration tests | Migration up; append and retrieve; rollback on failure; replay lineage; canonical payload round trip; readiness failure |
 | Browser | Smoke and accessibility checks | Scenario listing; run state; timeline/alarms; empty/error state; JSON and CSV export; keyboard use; reduced motion; narrow viewport |
-| Packaging | Build tests | Source and wheel build; metadata; `twine check`; installed-wheel CLI/API import smoke |
+| Packaging | Build and unit tests | Source and wheel build; metadata, including `License-Expression: MIT` with no `License` field or license classifier, and `LICENSE` as the only `License-File`, shipped byte-identical to the repository copy; `twine check`; installed-wheel CLI/API import smoke |
 | Containers | Compose smoke | Build; migration; liveness; readiness; API-to-database path; non-root/runtime configuration where declared |
 | Supply chain | CI checks | Dependency audit; pinned action revisions; secret scan; no unexpected tracked binaries or generated results |
 
