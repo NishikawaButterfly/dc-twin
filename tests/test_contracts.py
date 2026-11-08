@@ -3,6 +3,7 @@ from __future__ import annotations
 import codecs
 import contextlib
 import copy
+import difflib
 import importlib.util
 import io
 import json
@@ -56,6 +57,11 @@ def lines_of(text: str) -> list[str]:
     return io.StringIO(text, newline="\n").readlines()
 
 
+def canonical(document: object) -> str:
+    """A parsed JSON document written out with sorted keys, indented, in ASCII."""
+    return json.dumps(document, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
+
+
 @unittest.skipUnless(HAS_API, "FastAPI test dependencies are not installed")
 class OpenApiContractTests(unittest.TestCase):
     def test_committed_openapi_matches_its_generator(self) -> None:
@@ -68,10 +74,20 @@ class OpenApiContractTests(unittest.TestCase):
 
     def test_api_serves_the_committed_contract(self) -> None:
         with TestClient(app) as client:
-            response = client.get("/api/v1/openapi.json")
+            response = client.get(SERVED)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers["content-type"], "application/json")
-        self.assertEqual(response.json(), json.loads((ROOT / CONTRACT).read_bytes()))
+        # The API serves the document compact, so both are compared written out alike.
+        committed = canonical(json.loads((ROOT / CONTRACT).read_bytes()))
+        served = canonical(response.json())
+        if served != committed:
+            diff = difflib.unified_diff(
+                lines_of(committed),
+                lines_of(served),
+                f"{CONTRACT.as_posix()} (committed)",
+                f"{SERVED} (served)",
+            )
+            self.fail(NOT_SERVED + "".join(diff))
 
     def test_a_served_title_edit_is_reported_as_a_unified_diff(self) -> None:
         served = copy.deepcopy(app.openapi())
