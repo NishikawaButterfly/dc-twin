@@ -100,6 +100,15 @@ class OpenApiContractTests(unittest.TestCase):
             (1, [MISMATCH, BYTE_ORDER_MARK, REGENERATE]),
         )
 
+    def test_check_names_a_byte_order_mark_and_crlf_line_endings_together(self) -> None:
+        # Windows PowerShell 5.1 writes both: Get-Content | Set-Content -Encoding UTF8.
+        self.assertEqual(
+            self.check_edited_contract(
+                lambda generated: codecs.BOM_UTF8 + generated.replace(b"\n", b"\r\n")
+            ),
+            (1, [MISMATCH, BYTE_ORDER_MARK, CR_LINE_ENDINGS, REGENERATE]),
+        )
+
     def test_check_shows_bytes_that_are_not_utf8_as_escapes(self) -> None:
         title = title_line(app.title)
         latin1 = title.encode().replace(b'",\n', b'\xe9",\n')
