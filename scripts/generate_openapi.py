@@ -16,7 +16,7 @@ TARGET = ROOT / "contracts" / "openapi" / "v1" / "openapi.json"
 REGENERATE = "uv run python scripts/generate_openapi.py"
 ESCAPES = (
     "The diff shows a backslash as \\\\, a space at the end of a line as \\u0020, and a"
-    " character outside printable ASCII as \\uNNNN, or \\UNNNNNNNN above U+FFFF.\n"
+    " character that is not printable as \\uNNNN, or \\UNNNNNNNN above U+FFFF.\n"
 )
 
 
@@ -27,16 +27,21 @@ def lines_of(text: str) -> list[str]:
 
 
 def reads_as_written(line: str) -> bool:
-    """Whether a line shows what it holds: printable ASCII, no backslash, no space at its end."""
+    """Whether a line shows what it holds: each character printable, no space at its end.
+
+    A character is printable, as str.isprintable() says, when it is a letter,
+    mark, number, punctuation or symbol, or the space U+0020. Control and
+    format characters, and every other space, are among those that are not.
+    """
     text = line.removesuffix("\n")
-    return text.isascii() and text.isprintable() and "\\" not in text and not text.endswith(" ")
+    return text.isprintable() and not text.endswith(" ")
 
 
 def escape(character: str) -> str:
     """Write a character as ESCAPES says, or a byte that is not UTF-8 as \\xNN."""
     if character == "\\":
         return "\\\\"
-    if " " <= character <= "~":
+    if character.isprintable():
         return character
     if "\udc80" <= character <= "\udcff":
         # A byte that is not UTF-8, which decoding with surrogateescape turned into this.
@@ -55,8 +60,9 @@ def unified_diff(committed: str, generated: str, name: str) -> str:
     """Diff the committed text against the generated one, line by line.
 
     When every line the diff shows reads as written, it shows them as they
-    are. Otherwise it shows every line escaped, after the ESCAPES line, so
-    that no character hides and no two different lines read alike.
+    are, a backslash included. Otherwise it shows every line escaped, after
+    the ESCAPES line, so that no character that is not printable hides, and
+    a backslash that is in the text cannot pass for the start of an escape.
     """
     old, new = lines_of(committed), lines_of(generated)
     labels = (f"{name} (committed)", f"{name} (generated)")
