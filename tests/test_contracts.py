@@ -35,7 +35,7 @@ BYTE_ORDER_MARK = "It starts with a UTF-8 byte order mark; the generator writes 
 CR_LINE_ENDINGS = "It has CRLF or CR line endings; the generator writes LF.\n"
 ESCAPES = (
     "The diff shows a backslash as \\\\, a space at the end of a line as \\u0020, and a"
-    " character outside printable ASCII as \\uNNNN, or \\UNNNNNNNN above U+FFFF.\n"
+    " character that is not printable as \\uNNNN, or \\UNNNNNNNN above U+FFFF.\n"
 )
 REGENERATE = "Regenerate it with: uv run python scripts/generate_openapi.py\n"
 
@@ -218,12 +218,26 @@ class OpenApiContractTests(unittest.TestCase):
                 title.replace('",\n', f'{character}",\n'), title.replace('",\n', f'{escape}",\n')
             )
 
+    def test_check_shows_printable_characters_outside_ascii_as_they_are(self) -> None:
+        # An em dash, a multiplication sign and a capital sigma, as docs/user-guide/ uses them.
+        edited = title_line(app.title + " \u2014 2 \u00d7 \u03a3")
+        status, lines = self.check_edited_contract(self.with_title_line(edited.encode()))
+        self.assert_reported_as_diff(status, lines, ["-" + edited, "+" + title_line(app.title)])
+
+    def test_check_shows_json_escapes_as_they_are(self) -> None:
+        # Quotes and a line feed in a string, as a description may hold them.
+        edited = title_line(f'{app.title} "2N"\n')
+        self.assertTrue(edited.endswith(' \\"2N\\"\\n",\n'))
+        status, lines = self.check_edited_contract(self.with_title_line(edited.encode()))
+        self.assert_reported_as_diff(status, lines, ["-" + edited, "+" + title_line(app.title)])
+
     def test_check_shows_a_json_escape_apart_from_the_character_it_encodes(self) -> None:
-        # In JSON, the six characters \u00a0 stand for a no-break space: the diff must not
-        # show them as it shows the no-break space itself.
+        # In JSON, the six characters \u00a0 stand for a no-break space: once the diff is
+        # escaped, it must not show them as it shows the no-break space itself.
         title = title_line(app.title)
         self.assert_shown_escaped(
-            title.replace('",\n', '\\u00a0",\n'), title.replace('",\n', '\\\\u00a0",\n')
+            title.replace('",\n', '\\u00a0\u00a0",\n'),
+            title.replace('",\n', '\\\\u00a0\\u00a0",\n'),
         )
 
     def test_check_escapes_every_line_its_diff_shows(self) -> None:
