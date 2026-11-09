@@ -192,6 +192,32 @@ class OpenApiContractTests(unittest.TestCase):
             title.replace('",\n', '\x00",\n'), title.replace('",\n', '\\u0000",\n')
         )
 
+    def test_check_escapes_a_second_byte_order_mark(self) -> None:
+        # The check names the first mark and sets it aside, so the second starts the text.
+        status, lines = self.check_edited_contract(
+            lambda generated: codecs.BOM_UTF8 * 2 + generated
+        )
+        self.assert_reported_as_diff(
+            status, lines, ["-\\ufeff{\n", "+{\n"], [BYTE_ORDER_MARK, ESCAPES]
+        )
+
+    def test_check_escapes_other_characters_that_are_not_printable(self) -> None:
+        title = title_line(app.title)
+        shown = {
+            "\t": "\\u0009",
+            "\x0c": "\\u000c",
+            "\x85": "\\u0085",
+            "\u00ad": "\\u00ad",
+            "\u2029": "\\u2029",
+            "\u202e": "\\u202e",
+            "\u3000": "\\u3000",
+            "\U000e0001": "\\U000e0001",
+        }
+        for character, escape in shown.items():
+            self.assert_shown_escaped(
+                title.replace('",\n', f'{character}",\n'), title.replace('",\n', f'{escape}",\n')
+            )
+
     def test_check_shows_a_json_escape_apart_from_the_character_it_encodes(self) -> None:
         # In JSON, the six characters \u00a0 stand for a no-break space: the diff must not
         # show them as it shows the no-break space itself.
