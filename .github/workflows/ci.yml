@@ -48,8 +48,8 @@ jobs:
         run: |
           uv lock --check
           uv sync --locked --all-extras
-      - name: Generate OpenAPI bootstrap artifact
-        run: uv run python scripts/generate_openapi.py
+      - name: Check the committed OpenAPI contract
+        run: uv run python scripts/generate_openapi.py --check
       - name: Check formatting
         run: uv run ruff format --check --diff .
       - name: Lint
@@ -76,7 +76,7 @@ jobs:
           uv run --isolated --no-project --with dist/*.whl dc-twin --help
       - name: Audit Python dependencies
         run: uv run pip-audit
-      - name: Upload bootstrap and evidence artifacts
+      - name: Upload quality evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

@@ -1,0 +1,4 @@
+# scripts/generate_openapi.py --check compares this file byte for byte with
+# what the generator writes, which has LF line endings. Keep them on every
+# checkout, whatever core.autocrlf is set to.
+contracts/openapi/v1/openapi.json text eol=lf

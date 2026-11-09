@@ -23,6 +23,7 @@ python -m pip install -e ".[test,release]"
 Run the same focused checks used by CI:
 
 ```powershell
+python scripts/generate_openapi.py --check
 ruff format --check --diff .
 ruff check .
 mypy src
@@ -31,6 +32,8 @@ python -m build
 twine check dist\*
 pip-audit
 ```
+
+When the first check fails, it prints the command that regenerates the contract as CI runs it, `uv run python scripts/generate_openapi.py`; in the environment above, the same command is `python scripts/generate_openapi.py`.
 
 Do not commit virtual environments, generated results, database volumes, credentials, or local environment files.
 
